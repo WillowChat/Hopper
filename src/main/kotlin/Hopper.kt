@@ -17,7 +17,9 @@ object Hopper {
 
     fun broadcast(message: String) {
         for (user in users.keys) {
-            user.remote.sendString(message)
+            if (user.isOpen) {
+                user.remote.sendString(message)
+            }
         }
     }
 

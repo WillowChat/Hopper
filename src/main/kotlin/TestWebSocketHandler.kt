@@ -9,18 +9,21 @@ class TestWebSocketHandler {
 
     @OnWebSocketConnect
     fun onConnect(user: Session) {
-        Hopper.users[user] = Hopper.userCount.andIncrement
-        Hopper.broadcast("user ${Hopper.userCount} connected")
+        val userId = Hopper.userCount.andIncrement
+        Hopper.users[user] = userId
+        Hopper.broadcast("user $userId connected")
     }
 
     @OnWebSocketClose
     fun onClose(user: Session, statusCode: Int, reason: String) {
+        val userId = Hopper.users[user]
         Hopper.users.remove(user)
-        Hopper.broadcast("user closed: $statusCode $reason")
+        Hopper.broadcast("user $userId closed: $statusCode $reason")
     }
 
     @OnWebSocketMessage
     fun onMessage(user: Session, message: String) {
-        Hopper.broadcast("user ${Hopper.userCount} sent message: $message")
+        val userId = Hopper.users[user]
+        Hopper.broadcast("user $userId sent message: $message")
     }
 }
