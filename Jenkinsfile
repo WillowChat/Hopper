@@ -9,14 +9,6 @@ pipeline {
         always {
             junit allowEmptyResults: true, testResults: 'build/test-results/**/*.xml'
         }
-
-        success {
-            ircSendSuccess()
-        }
-
-        failure {
-            ircSendFailure()
-        }
     }
 
     environment {
@@ -26,8 +18,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                ircSendStarted()
-
                 sh "rm -Rv build || true"
             }
         }
