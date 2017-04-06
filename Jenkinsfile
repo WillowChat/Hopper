@@ -9,15 +9,25 @@ pipeline {
         always {
             junit allowEmptyResults: true, testResults: 'build/test-results/**/*.xml'
         }
+
+        success {
+            ircSendSuccess()
+        }
+
+        failure {
+            ircSendFailure()
+        }
     }
 
     environment {
-        GRADLE_OPTIONS = "--no-daemon --rerun-tasks -PBUILD_NUMBER=${env.BUILD_NUMBER} -PBRANCH=\"${env.BRANCH_NAME}\""
+        GRADLE_OPTIONS = "--no-daemon --rerun-tasks"
     }
 
     stages {
         stage('Checkout') {
             steps {
+                ircSendStarted()
+
                 sh "rm -Rv build || true"
             }
         }
