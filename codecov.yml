@@ -1,0 +1,10 @@
+coverage:
+# Remember to change values in build.gradle.kts too
+  ignore:
+  - **/*Event.kt
+  - **/*State.kt
+  - **/*Configuration.kt
+  - **/*Runner.kt
+  status:
+    project: off
+    patch: off
