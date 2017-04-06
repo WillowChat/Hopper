@@ -20,7 +20,7 @@ pipeline {
     }
 
     environment {
-        GRADLE_OPTIONS = "--no-daemon --rerun-tasks"
+        GRADLE_OPTIONS = "--no-daemon --rerun-tasks -PBUILD_NUMBER=${env.BUILD_NUMBER} -PBRANCH='${env.BRANCH_NAME}'"
     }
 
     stages {
