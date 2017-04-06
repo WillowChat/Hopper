@@ -1,3 +1,5 @@
+package chat.willow.hopper
+
 import org.eclipse.jetty.websocket.api.Session
 import spark.Spark.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -12,15 +14,13 @@ object Hopper {
 
         webSocket("/websocket", TestWebSocketHandler::class.java)
 
-        get("/hello") { req, res -> "Hello World" }
+        get("/hello") { _, _ -> "Hello World" }
     }
 
     fun broadcast(message: String) {
-        for (user in users.keys) {
-            if (user.isOpen) {
-                user.remote.sendString(message)
-            }
-        }
+        users.keys
+                .filter { it.isOpen }
+                .forEach { it.remote.sendString(message) }
     }
 
 }
