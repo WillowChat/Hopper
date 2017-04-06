@@ -28,7 +28,6 @@ pipeline {
             steps {
                 ircSendStarted()
 
-                checkout scm
                 sh "rm -Rv build || true"
             }
         }
