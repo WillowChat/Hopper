@@ -5,7 +5,7 @@ Inspired by [Possel](https://github.com/possel/possel).
 
 This project is managed [on Trello](https://trello.com/b/KgFspfjh/hopper). It's in active development - probably not suitable for use before version 1.0!
 
-[![trello](https://img.shields.io/badge/trello-%F0%9F%93%8B-blue.svg)](https://trello.com/b/KgFspfjh/hopper) [![codecov](https://codecov.io/gh/WillowChat/Hopper/branch/develop/graph/badge.svg)](https://codecov.io/gh/WillowChat/Hopper)
+[![trello](https://img.shields.io/badge/trello-%F0%9F%93%8B-blue.svg)](https://trello.com/b/KgFspfjh/hopper) [![patreon](https://img.shields.io/badge/patreon-%F0%9F%A5%95-orange.svg)](https://patreon.com/carrotcodes) [![codecov](https://codecov.io/gh/WillowChat/Hopper/branch/develop/graph/badge.svg)](https://codecov.io/gh/WillowChat/Hopper)
 
 ## Uses
 * [Warren](https://github.com/carrotcodes/warren) for IRC state management
