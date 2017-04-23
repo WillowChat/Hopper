@@ -3,15 +3,9 @@ Kotlin/JVM IRC bouncer and multiplexer. Provides an HTTP API for reading and upd
 
 Inspired by [Possel](https://github.com/possel/possel).
 
-[![codecov](https://codecov.io/gh/WillowChat/Hopper/branch/develop/graph/badge.svg)](https://codecov.io/gh/WillowChat/Hopper)
+This project is managed [on Trello](https://trello.com/b/KgFspfjh/hopper). It's in active development - probably not suitable for use before version 1.0!
 
-## TODO
-* Document HTTP API and websocket events
-* Authentication (log in, log out, auth tokens)
-* Networks (adding, removing, fetching)
-* Buffers (adding, removing, fetching)
-* Lines (adding, fetching)
-* Live state (networks, buffers, memberships, lines)
+[![codecov](https://codecov.io/gh/WillowChat/Hopper/branch/develop/graph/badge.svg)](https://codecov.io/gh/WillowChat/Hopper)
 
 ## Uses
 * [Warren](https://github.com/carrotcodes/warren) for IRC state management
