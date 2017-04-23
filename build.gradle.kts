@@ -56,7 +56,10 @@ application {
 }
 
 repositories {
+    jcenter()
     gradleScriptKotlin()
+    maven { setUrl("https://maven.ci.carrot.codes/") }
+    maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots") }
 }
 
 dependencies {
@@ -65,6 +68,12 @@ dependencies {
     compile("org.slf4j:slf4j-api:1.7.25")
     compile("org.slf4j:slf4j-simple:1.7.25")
     compile("com.sparkjava:spark-core:2.5.5")
+    compile("chat.willow.warren:Warren:2.1.0.5")
+    compile("org.pac4j:spark-pac4j:2.0.0-RC2")
+    compile("org.pac4j:pac4j-http:2.0.0-RC2")
+
+    compile("com.squareup.moshi:moshi:1.5.0-SNAPSHOT")
+    compile("com.squareup.moshi:moshi-kotlin:1.5.0-SNAPSHOT")
 
     testCompile("junit:junit:4.12")
     testCompile("org.mockito:mockito-core:2.7.21")
