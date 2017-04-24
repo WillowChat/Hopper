@@ -1,3 +1,3 @@
-package chat.willow.hopper.model.rest
+package chat.willow.hopper.routes.sessions
 
 data class SessionsPostRequestBody(val user: String, val password: String)

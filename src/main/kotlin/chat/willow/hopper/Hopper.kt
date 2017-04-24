@@ -2,10 +2,10 @@ package chat.willow.hopper
 
 import chat.willow.hopper.auth.IdentifierGenerator
 import chat.willow.hopper.auth.Pac4JConfigFactory
-import chat.willow.hopper.model.rest.Server
-import chat.willow.hopper.routes.ServersGetRouteHandler
-import chat.willow.hopper.routes.ServersPostRouteHandler
-import chat.willow.hopper.routes.SessionsPostRouteHandler
+import chat.willow.hopper.routes.servers.Server
+import chat.willow.hopper.routes.servers.ServersGetRouteHandler
+import chat.willow.hopper.routes.servers.ServersPostRouteHandler
+import chat.willow.hopper.routes.sessions.SessionsPostRouteHandler
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
 import org.eclipse.jetty.websocket.api.Session

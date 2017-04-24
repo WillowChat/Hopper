@@ -1,6 +1,6 @@
 package chat.willow.hopper.routes
 
-import chat.willow.hopper.model.rest.ErrorResponseBody
+import chat.willow.hopper.routes.shared.ErrorResponseBody
 import org.pac4j.core.profile.CommonProfile
 import org.pac4j.core.profile.ProfileManager
 import org.pac4j.sparkjava.SparkWebContext

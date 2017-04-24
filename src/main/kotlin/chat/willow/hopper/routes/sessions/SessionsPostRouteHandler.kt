@@ -1,10 +1,14 @@
-package chat.willow.hopper.routes
+package chat.willow.hopper.routes.sessions
 
 import chat.willow.hopper.Hopper
 import chat.willow.hopper.loggerFor
-import chat.willow.hopper.model.rest.ErrorResponseBody
-import chat.willow.hopper.model.rest.SessionsPostRequestBody
-import chat.willow.hopper.model.rest.SessionsPostResponseBody
+import chat.willow.hopper.routes.shared.ErrorResponseBody
+import chat.willow.hopper.routes.sessions.SessionsPostRequestBody
+import chat.willow.hopper.routes.sessions.SessionsPostResponseBody
+import chat.willow.hopper.routes.JsonRouteHandler
+import chat.willow.hopper.routes.RouteResult
+import chat.willow.hopper.routes.stringParser
+import chat.willow.hopper.routes.stringSerialiser
 import chat.willow.hopper.usersToTokens
 import com.squareup.moshi.Moshi
 import org.pac4j.core.profile.CommonProfile

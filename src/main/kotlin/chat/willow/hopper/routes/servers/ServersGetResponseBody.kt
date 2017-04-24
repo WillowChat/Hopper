@@ -1,4 +1,4 @@
-package chat.willow.hopper.model.rest
+package chat.willow.hopper.routes.servers
 
 data class ServersGetResponseBody(val servers: Set<Server>)
 

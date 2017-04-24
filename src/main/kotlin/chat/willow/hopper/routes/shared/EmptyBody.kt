@@ -1,4 +1,4 @@
-package chat.willow.hopper.model.rest
+package chat.willow.hopper.routes.shared
 
 import chat.willow.hopper.routes.IStringParser
 
