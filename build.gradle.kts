@@ -99,7 +99,7 @@ jacocoTestReport.apply {
     reports.html.isEnabled = true
 }
 
-val sourceSets = java().sourceSets
+val sourceSets = java.sourceSets
 val mainSourceSet = sourceSets["main"]
 
 val shadowJar: ShadowJar by tasks
