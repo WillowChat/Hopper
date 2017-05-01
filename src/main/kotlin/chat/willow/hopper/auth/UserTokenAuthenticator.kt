@@ -1,6 +1,6 @@
 package chat.willow.hopper.auth
 
-import chat.willow.hopper.usersToTokens
+import chat.willow.hopper.HopperDatabase
 import org.pac4j.core.context.Pac4jConstants
 import org.pac4j.core.context.WebContext
 import org.pac4j.core.credentials.UsernamePasswordCredentials
@@ -21,7 +21,8 @@ class UserTokenAuthenticator : Authenticator<UsernamePasswordCredentials> {
             throw HttpAction.unauthorized("malformed credentials", context, "hopper")
         }
 
-        val authed = usersToTokens[credentials.username]?.contains(credentials.password) ?: false
+        val dbUserTokens = HopperDatabase.getUserTokens(credentials.username) ?: throw CredentialsException("unauthorized")
+        val authed = dbUserTokens.contains(credentials.password)
         if (!authed) {
             throw CredentialsException("unauthorized")
         }

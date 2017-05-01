@@ -1,13 +1,10 @@
 package chat.willow.hopper.routes.servers
 
-import chat.willow.hopper.Hopper
+import chat.willow.hopper.HopperRunner
 import chat.willow.hopper.loggerFor
-import chat.willow.hopper.routes.shared.ErrorResponseBody
-import chat.willow.hopper.routes.servers.Server
-import chat.willow.hopper.routes.servers.ServersPostRequestBody
-import chat.willow.hopper.routes.servers.ServersPostResponseBody
 import chat.willow.hopper.routes.JsonRouteHandler
 import chat.willow.hopper.routes.RouteResult
+import chat.willow.hopper.routes.shared.ErrorResponseBody
 import chat.willow.hopper.routes.stringParser
 import chat.willow.hopper.routes.stringSerialiser
 import chat.willow.warren.WarrenClient
@@ -26,14 +23,14 @@ class ServersPostRouteHandler(moshi: Moshi) : JsonRouteHandler<ServersPostReques
             return unauthenticatedError()
         }
 
-        val serverId = Hopper.serverIdGenerator.nextSessionId()
+        val serverId = HopperRunner.serverIdGenerator.nextSessionId()
         val warren = WarrenClient.build {
             server(request.server)
             user(request.nick)
         }
 
         warren.events.onAny {
-            Hopper.broadcast("warren event $serverId: $it")
+            HopperRunner.broadcast("warren event $serverId: $it")
         }
 
         thread {
@@ -42,14 +39,14 @@ class ServersPostRouteHandler(moshi: Moshi) : JsonRouteHandler<ServersPostReques
             LOGGER.info("warren ended $serverId")
         }
 
-        Hopper.serversToWarrens[serverId] = warren
+        HopperRunner.serversToWarrens[serverId] = warren
 
         val server = Server(id = serverId, server = request.server, nick = request.nick)
 
-        var currentServers = Hopper.usersToServers[user.username] ?: mutableSetOf()
+        var currentServers = HopperRunner.usersToServers[user.username] ?: mutableSetOf()
         currentServers += server
 
-        Hopper.usersToServers[user.username] = currentServers
+        HopperRunner.usersToServers[user.username] = currentServers
 
         return RouteResult.success(value = ServersPostResponseBody(id = serverId))
     }

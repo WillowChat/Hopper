@@ -14,31 +14,31 @@ class TestWebSocketHandler {
 
     @OnWebSocketConnect
     fun onConnect(user: Session) {
-        val userId = Hopper.userCount.andIncrement
-        Hopper.users[user] = userId
+        val userId = HopperRunner.userCount.andIncrement
+        HopperRunner.users[user] = userId
 
         val message = "user $userId connected"
         LOGGER.info(message)
-        Hopper.broadcast(message)
+        HopperRunner.broadcast(message)
     }
 
     @OnWebSocketClose
     fun onClose(user: Session, statusCode: Int, reason: String) {
-        val userId = Hopper.users[user]
-        Hopper.users.remove(user)
+        val userId = HopperRunner.users[user]
+        HopperRunner.users.remove(user)
 
         val message = "user $userId closed: $statusCode $reason"
         LOGGER.info(message)
-        Hopper.broadcast(message)
+        HopperRunner.broadcast(message)
     }
 
     @OnWebSocketMessage
     fun onMessage(user: Session, message: String) {
-        val userId = Hopper.users[user]
+        val userId = HopperRunner.users[user]
 
         val broadcastMessage = "user $userId sent message: $message"
         LOGGER.info(broadcastMessage)
-        Hopper.broadcast(broadcastMessage)
+        HopperRunner.broadcast(broadcastMessage)
 
         if (message.startsWith("send")) {
             val parameters = message.split(CharacterCodes.SPACE, limit = 3)
@@ -50,7 +50,7 @@ class TestWebSocketHandler {
             val target = parameters[1]
             val targetMessage = parameters[2]
 
-            Hopper.send(targetMessage, target)
+            HopperRunner.send(targetMessage, target)
         }
     }
 }

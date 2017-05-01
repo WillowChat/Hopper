@@ -1,17 +1,16 @@
 package chat.willow.hopper.routes.sessions
 
-import chat.willow.hopper.Hopper
+import chat.willow.hopper.HopperDatabase
+import chat.willow.hopper.HopperRunner
 import chat.willow.hopper.loggerFor
-import chat.willow.hopper.routes.shared.ErrorResponseBody
-import chat.willow.hopper.routes.sessions.SessionsPostRequestBody
-import chat.willow.hopper.routes.sessions.SessionsPostResponseBody
 import chat.willow.hopper.routes.JsonRouteHandler
 import chat.willow.hopper.routes.RouteResult
+import chat.willow.hopper.routes.shared.ErrorResponseBody
 import chat.willow.hopper.routes.stringParser
 import chat.willow.hopper.routes.stringSerialiser
-import chat.willow.hopper.usersToTokens
 import com.squareup.moshi.Moshi
 import org.pac4j.core.profile.CommonProfile
+import java.util.*
 
 class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequestBody, SessionsPostResponseBody>(moshi.stringParser(), moshi.stringSerialiser(), moshi.stringSerialiser()) {
 
@@ -23,27 +22,31 @@ class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequ
 
         }
 
-        val authed = Hopper.usersToPasswords[request.user]?.equals(request.password) ?: false
-        if (!authed) {
-            return RouteResult.failure(code = 401, error = ErrorResponseBody(code = 123, message = "bad credentials"))
+        val dbUser = HopperDatabase.getUser(request.user) ?: return badCredentials
+        val decodedPassword = HopperRunner.Pbdfk2HmacSha512PasswordHasher.decode(dbUser.password) ?: return badCredentials
 
-        }
+        // todo: validate key length
+
+        val hashedProvidedPassword = HopperRunner.Pbdfk2HmacSha512PasswordHasher.compute(request.password, salt = decodedPassword.salt, iterations = decodedPassword.iterations, keyLength = decodedPassword.hashSize * 8) ?: return badCredentials
+        val base64ProvidedPassword = Base64.getEncoder().encodeToString(hashedProvidedPassword)
+
+        if (base64ProvidedPassword != decodedPassword.encodedHash) return badCredentials
 
         var storedToken = false
         var newToken = ""
 
-        while (!storedToken) {
-            newToken = Hopper.tokenGenerator.nextSessionId()
+        val dbUserTokens = HopperDatabase.getUserTokens(dbUser.username) ?: return RouteResult.failure(code = 500, error = ErrorResponseBody(code = 123, message = "couldn't fetch user tokens"))
 
-            val alreadyExists = usersToTokens.any { it.value.contains(newToken) }
+        while (!storedToken) {
+            newToken = HopperRunner.tokenGenerator.nextSessionId()
+
+            val alreadyExists = dbUserTokens.any { it.contains(newToken) }
             if (alreadyExists) {
                 continue
             }
 
-            val currentTokens = usersToTokens[request.user] ?: mutableSetOf()
-            currentTokens += newToken
+            HopperDatabase.addUserToken(dbUser.userid, newToken)
 
-            usersToTokens[request.user] = currentTokens
             storedToken = true
         }
 
@@ -51,5 +54,7 @@ class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequ
 
         return RouteResult.success(value = SessionsPostResponseBody(token = newToken))
     }
+
+    val badCredentials: RouteResult<SessionsPostResponseBody, ErrorResponseBody> = RouteResult.failure(code = 401, error = ErrorResponseBody(code = 123, message = "bad credentials"))
 
 }
