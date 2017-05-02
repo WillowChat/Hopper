@@ -1,4 +1,4 @@
-package chat.willow.hopper.routes.servers
+package chat.willow.hopper.routes.connections
 
 import chat.willow.hopper.HopperRunner
 import chat.willow.hopper.loggerFor
@@ -12,12 +12,12 @@ import com.squareup.moshi.Moshi
 import org.pac4j.core.profile.CommonProfile
 import kotlin.concurrent.thread
 
-class ServersPostRouteHandler(moshi: Moshi) : JsonRouteHandler<ServersPostRequestBody, ServersPostResponseBody>(moshi.stringParser(), moshi.stringSerialiser(), moshi.stringSerialiser()) {
+class ConnectionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<ConnectionsPostRequestBody, ConnectionsPostResponseBody>(moshi.stringParser(), moshi.stringSerialiser(), moshi.stringSerialiser()) {
 
-    private val LOGGER = loggerFor<ServersPostRouteHandler>()
+    private val LOGGER = loggerFor<ConnectionsPostRouteHandler>()
 
-    override fun handle(request: ServersPostRequestBody, user: CommonProfile?): RouteResult<ServersPostResponseBody, ErrorResponseBody> {
-        LOGGER.info("handling POST /servers: $request")
+    override fun handle(request: ConnectionsPostRequestBody, user: CommonProfile?): RouteResult<ConnectionsPostResponseBody, ErrorResponseBody> {
+        LOGGER.info("handling POST /connections: $request")
 
         if (user == null) {
             return unauthenticatedError()
@@ -48,7 +48,7 @@ class ServersPostRouteHandler(moshi: Moshi) : JsonRouteHandler<ServersPostReques
 
         HopperRunner.usersToServers[user.username] = currentServers
 
-        return RouteResult.success(value = ServersPostResponseBody(id = serverId))
+        return RouteResult.success(value = ConnectionsPostResponseBody(id = serverId))
     }
 
 }

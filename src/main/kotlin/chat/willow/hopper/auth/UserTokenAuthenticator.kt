@@ -1,6 +1,6 @@
 package chat.willow.hopper.auth
 
-import chat.willow.hopper.HopperDatabase
+import chat.willow.hopper.db.HopperDatabase
 import org.pac4j.core.context.Pac4jConstants
 import org.pac4j.core.context.WebContext
 import org.pac4j.core.credentials.UsernamePasswordCredentials

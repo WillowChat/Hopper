@@ -8,4 +8,8 @@ object EmptyBody : IStringParser<EmptyBody> {
         return EmptyBody
     }
 
+    override fun toString(): String {
+        return "EmptyBody"
+    }
+
 }

@@ -1,7 +1,8 @@
 package chat.willow.hopper.routes.sessions
 
-import chat.willow.hopper.HopperDatabase
+import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.HopperRunner
+import chat.willow.hopper.Pbdfk2HmacSha512PasswordStorage
 import chat.willow.hopper.loggerFor
 import chat.willow.hopper.routes.JsonRouteHandler
 import chat.willow.hopper.routes.RouteResult
@@ -23,32 +24,19 @@ class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequ
         }
 
         val dbUser = HopperDatabase.getUser(request.user) ?: return badCredentials
-        val decodedPassword = HopperRunner.Pbdfk2HmacSha512PasswordHasher.decode(dbUser.password) ?: return badCredentials
+        val decodedPassword = Pbdfk2HmacSha512PasswordStorage.decode(dbUser.password) ?: return badCredentials
 
         // todo: validate key length
 
-        val hashedProvidedPassword = HopperRunner.Pbdfk2HmacSha512PasswordHasher.compute(request.password, salt = decodedPassword.salt, iterations = decodedPassword.iterations, keyLength = decodedPassword.hashSize * 8) ?: return badCredentials
+        val hashedProvidedPassword = Pbdfk2HmacSha512PasswordStorage.compute(request.password, salt = decodedPassword.salt, iterations = decodedPassword.iterations, keyLength = decodedPassword.hashSize * 8) ?: return badCredentials
         val base64ProvidedPassword = Base64.getEncoder().encodeToString(hashedProvidedPassword)
 
         if (base64ProvidedPassword != decodedPassword.encodedHash) return badCredentials
 
-        var storedToken = false
-        var newToken = ""
+        val newToken = HopperRunner.tokenGenerator.nextSessionId()
 
-        val dbUserTokens = HopperDatabase.getUserTokens(dbUser.username) ?: return RouteResult.failure(code = 500, error = ErrorResponseBody(code = 123, message = "couldn't fetch user tokens"))
-
-        while (!storedToken) {
-            newToken = HopperRunner.tokenGenerator.nextSessionId()
-
-            val alreadyExists = dbUserTokens.any { it.contains(newToken) }
-            if (alreadyExists) {
-                continue
-            }
-
-            HopperDatabase.addUserToken(dbUser.userid, newToken)
-
-            storedToken = true
-        }
+        // todo: handle failure
+        HopperDatabase.addUserToken(dbUser.userid, newToken)
 
         LOGGER.info("Stored new auth token for user ${request.user}")
 
