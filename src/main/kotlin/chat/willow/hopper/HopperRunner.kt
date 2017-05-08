@@ -40,27 +40,12 @@ object HopperRunner {
     private var warren: IWarrenClient? = null
 
     @JvmStatic fun main(args: Array<String>) {
+        LOGGER.info("Support the development of this bouncer at https:/crrt.io/patreon 🎉")
+        LOGGER.info("Starting up...")
+
         doFirstTimeUsageIfNecessary()
 
-        println("hello world")
-
-        val service = Service.ignite()
-
-        service.webSocket("/websocket", TestWebSocketHandler::class.java)
-
-        service.path("/sessions") {
-            service.post("", SessionsPostRouteHandler(moshi))
-        }
-
-        service.path("/v1") {
-            service.before("/*", securityFilter)
-
-            service.path("/connections") {
-                service.get("", ConnectionsGetRouteHandler(moshi))
-                service.post("", ConnectionsPostRouteHandler(moshi))
-            }
-        }
-
+        HopperWebService().start()
     }
 
     fun doFirstTimeUsageIfNecessary() {
@@ -116,6 +101,29 @@ object HopperRunner {
         val warren = warren ?: return
 
         warren.send(message, channel)
+    }
+
+}
+
+class HopperWebService {
+
+    fun start() {
+        val service = Service.ignite()
+
+        service.webSocket("/websocket", TestWebSocketHandler::class.java)
+
+        service.path("/sessions") {
+            service.post("", SessionsPostRouteHandler(HopperRunner.moshi))
+        }
+
+        service.path("/v1") {
+            service.before("/*", HopperRunner.securityFilter)
+
+            service.path("/connections") {
+                service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi))
+                service.post("", ConnectionsPostRouteHandler(HopperRunner.moshi))
+            }
+        }
     }
 
 }
