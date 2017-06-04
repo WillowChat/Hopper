@@ -73,9 +73,6 @@ dependencies {
 
     compile("chat.willow.warren:Warren:2.1.0.5")
 
-    compile("org.pac4j:spark-pac4j:2.0.0-RC2")
-    compile("org.pac4j:pac4j-http:2.0.0-RC2")
-
     compile("com.squareup.moshi:moshi:1.5.0-SNAPSHOT")
     compile("com.squareup.moshi:moshi-kotlin:1.5.0-SNAPSHOT")
 

@@ -1,9 +1,7 @@
 package chat.willow.hopper.routes
 
+import chat.willow.hopper.auth.BasicSparkAuthFilter
 import chat.willow.hopper.routes.shared.ErrorResponseBody
-import org.pac4j.core.profile.CommonProfile
-import org.pac4j.core.profile.ProfileManager
-import org.pac4j.sparkjava.SparkWebContext
 import spark.Request
 import spark.Response
 import spark.Route
@@ -17,18 +15,9 @@ abstract class JsonRouteHandler<RequestType, SuccessType>(val requestAdapter: IS
             return ""
         }
 
-        // todo: extract user profile from context somewhere else
-        val context = SparkWebContext(request, response)
-        val manager = ProfileManager<CommonProfile>(context)
-        val profile = manager.get(false)
+        val authenticatedUser = BasicSparkAuthFilter.authenticatedUser(request)
 
-        val user = if (profile.isPresent) {
-            profile.get()
-        } else {
-            null
-        }
-
-        val result = this.handle(requestTyped, user)
+        val result = this.handle(requestTyped, authenticatedUser)
 
         response.status(result.code)
 

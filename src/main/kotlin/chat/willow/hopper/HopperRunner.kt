@@ -1,9 +1,6 @@
 package chat.willow.hopper
 
-import chat.willow.hopper.auth.IdentifierGenerator
-import chat.willow.hopper.auth.Pac4JConfigFactory
-import chat.willow.hopper.auth.Pbdfk2HmacSha512PasswordStorage
-import chat.willow.hopper.auth.UserTokenAuthenticator
+import chat.willow.hopper.auth.*
 import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.routes.connections.ConnectionsGetRouteHandler
@@ -14,7 +11,6 @@ import chat.willow.hopper.websocket.HopperWebsocket
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
 import org.jetbrains.exposed.sql.name
-import org.pac4j.sparkjava.SecurityFilter
 import spark.Service
 import java.io.File
 import java.util.*
@@ -28,8 +24,7 @@ object HopperRunner {
     var users: MutableMap<org.eclipse.jetty.websocket.api.Session, Int> = mutableMapOf()
 
     val authenticator = UserTokenAuthenticator()
-    val pac4jConfig = Pac4JConfigFactory(authenticator).build()
-    val securityFilter = SecurityFilter(pac4jConfig, "DirectBasicAuthClient")
+    val authHeaderExtractor = AuthHeaderExtractor
 
     val moshi = Moshi.Builder().build()
     val usersToServers = mutableMapOf<String, Set<Server>>()
@@ -49,7 +44,7 @@ object HopperRunner {
 
         doFirstTimeUsageIfNecessary()
 
-        HopperWebService().start()
+        HopperWebService(authHeaderExtractor, authenticator).start()
     }
 
     fun doFirstTimeUsageIfNecessary() {
@@ -109,19 +104,19 @@ object HopperRunner {
 
 }
 
-class HopperWebService {
+class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor, private val authenticator: IUserTokenAuthenticator) {
 
     fun start() {
         val service = Service.ignite()
 
-        service.webSocket("/websocket", HopperWebsocket::class.java)
+        service.webSocket("/websocket", HopperWebsocket(authenticator, authHeaderExtractor))
 
         service.path("/sessions") {
             service.post("", SessionsPostRouteHandler(HopperRunner.moshi))
         }
 
         service.path("/v1") {
-            service.before("/*", HopperRunner.securityFilter)
+            service.before("/*", BasicSparkAuthFilter(authHeaderExtractor, authenticator, service))
 
             service.path("/connections") {
                 service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi))

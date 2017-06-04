@@ -1,7 +1,7 @@
 package chat.willow.hopper.routes
 
-import org.pac4j.core.profile.CommonProfile
+import chat.willow.hopper.auth.BasicSparkAuthFilter
 
 interface IRoute<in RequestType, out ResponseType> {
-    fun handle(request: RequestType, user: CommonProfile?): ResponseType
+    fun handle(request: RequestType, user: BasicSparkAuthFilter.AuthenticatedUser?): ResponseType
 }
