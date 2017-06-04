@@ -1,13 +1,16 @@
 package chat.willow.hopper
 
-import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.auth.IdentifierGenerator
 import chat.willow.hopper.auth.Pac4JConfigFactory
-import chat.willow.hopper.db.*
-import chat.willow.hopper.routes.connections.Server
+import chat.willow.hopper.auth.Pbdfk2HmacSha512PasswordStorage
+import chat.willow.hopper.auth.UserTokenAuthenticator
+import chat.willow.hopper.db.HopperDatabase
+import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.routes.connections.ConnectionsGetRouteHandler
 import chat.willow.hopper.routes.connections.ConnectionsPostRouteHandler
+import chat.willow.hopper.routes.connections.Server
 import chat.willow.hopper.routes.sessions.SessionsPostRouteHandler
+import chat.willow.hopper.websocket.HopperWebsocket
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
 import org.jetbrains.exposed.sql.name
@@ -24,7 +27,8 @@ object HopperRunner {
     var userCount = AtomicInteger(-1)
     var users: MutableMap<org.eclipse.jetty.websocket.api.Session, Int> = mutableMapOf()
 
-    val pac4jConfig = Pac4JConfigFactory().build()
+    val authenticator = UserTokenAuthenticator()
+    val pac4jConfig = Pac4JConfigFactory(authenticator).build()
     val securityFilter = SecurityFilter(pac4jConfig, "DirectBasicAuthClient")
 
     val moshi = Moshi.Builder().build()
@@ -110,7 +114,7 @@ class HopperWebService {
     fun start() {
         val service = Service.ignite()
 
-        service.webSocket("/websocket", TestWebSocketHandler::class.java)
+        service.webSocket("/websocket", HopperWebsocket::class.java)
 
         service.path("/sessions") {
             service.post("", SessionsPostRouteHandler(HopperRunner.moshi))

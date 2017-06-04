@@ -1,8 +1,8 @@
 package chat.willow.hopper.routes.sessions
 
-import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.HopperRunner
-import chat.willow.hopper.Pbdfk2HmacSha512PasswordStorage
+import chat.willow.hopper.auth.Pbdfk2HmacSha512PasswordStorage
+import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.loggerFor
 import chat.willow.hopper.routes.JsonRouteHandler
 import chat.willow.hopper.routes.RouteResult
@@ -17,6 +17,7 @@ class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequ
 
     private val LOGGER = loggerFor<SessionsPostRouteHandler>()
 
+    // todo: extract dependencies
     override fun handle(request: SessionsPostRequestBody, user: CommonProfile?): RouteResult<SessionsPostResponseBody, ErrorResponseBody> {
         if (request.user.isNullOrBlank() || request.password.isNullOrBlank()) {
             return RouteResult.failure(code = 400, error = ErrorResponseBody(code = 123, message = "badly formatted user or password"))

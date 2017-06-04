@@ -1,4 +1,4 @@
-package chat.willow.hopper
+package chat.willow.hopper.auth
 
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException

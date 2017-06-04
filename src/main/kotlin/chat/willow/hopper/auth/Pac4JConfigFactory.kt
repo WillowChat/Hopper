@@ -5,10 +5,10 @@ import org.pac4j.core.config.ConfigFactory
 import org.pac4j.http.client.direct.DirectBasicAuthClient
 import org.pac4j.sparkjava.DefaultHttpActionAdapter
 
-class Pac4JConfigFactory : ConfigFactory {
+class Pac4JConfigFactory(private val authenticator: IUserTokenAuthenticator) : ConfigFactory {
 
     override fun build(): Config {
-        val httpAuth = DirectBasicAuthClient(UserTokenAuthenticator())
+        val httpAuth = DirectBasicAuthClient(Pac4JUserTokenAuthenticator(authenticator))
 
         val httpActionAdapter = DefaultHttpActionAdapter()
 

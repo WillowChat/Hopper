@@ -9,7 +9,20 @@ import org.pac4j.core.exception.CredentialsException
 import org.pac4j.core.exception.HttpAction
 import org.pac4j.core.profile.CommonProfile
 
-class UserTokenAuthenticator : Authenticator<UsernamePasswordCredentials> {
+interface IUserTokenAuthenticator {
+    fun credentialsMatch(username: String, token: String): Boolean
+}
+
+class UserTokenAuthenticator: IUserTokenAuthenticator {
+
+    override fun credentialsMatch(username: String, token: String): Boolean {
+        val dbUserTokens = HopperDatabase.getUserTokens(username) ?: return false
+        return dbUserTokens.contains(token)
+    }
+
+}
+
+class Pac4JUserTokenAuthenticator(val authenticator: IUserTokenAuthenticator) : Authenticator<UsernamePasswordCredentials> {
 
     @Throws(HttpAction::class, CredentialsException::class)
     override fun validate(credentials: UsernamePasswordCredentials?, context: WebContext) {
@@ -21,15 +34,14 @@ class UserTokenAuthenticator : Authenticator<UsernamePasswordCredentials> {
             throw HttpAction.unauthorized("malformed credentials", context, "hopper")
         }
 
-        val dbUserTokens = HopperDatabase.getUserTokens(credentials.username) ?: throw CredentialsException("unauthorized")
-        val authed = dbUserTokens.contains(credentials.password)
+        val authed = authenticator.credentialsMatch(credentials.username, credentials.password)
         if (!authed) {
             throw CredentialsException("unauthorized")
         }
 
         val profile = CommonProfile()
         profile.setId(credentials.username)
-        profile.addAttribute(Pac4jConstants.USERNAME, credentials.username);
+        profile.addAttribute(Pac4jConstants.USERNAME, credentials.username)
 
         credentials.userProfile = profile
     }

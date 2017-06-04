@@ -11,7 +11,7 @@ val kotlinVersion by project
 
 buildscript {
 
-    val buildscriptKotlinVersion = "1.1.1"
+    val buildscriptKotlinVersion = "1.1.2-4"
     fun kotlin(module: String, version: String = buildscriptKotlinVersion) = "org.jetbrains.kotlin:kotlin-$module:$version"
 
     repositories {

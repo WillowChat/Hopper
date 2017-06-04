@@ -17,6 +17,7 @@ abstract class JsonRouteHandler<RequestType, SuccessType>(val requestAdapter: IS
             return ""
         }
 
+        // todo: extract user profile from context somewhere else
         val context = SparkWebContext(request, response)
         val manager = ProfileManager<CommonProfile>(context)
         val profile = manager.get(false)
