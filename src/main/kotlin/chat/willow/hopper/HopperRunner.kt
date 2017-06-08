@@ -39,7 +39,7 @@ object HopperRunner {
     private var warren: IWarrenClient? = null
 
     @JvmStatic fun main(args: Array<String>) {
-        LOGGER.info("Support the development of this bouncer at https:/crrt.io/patreon 🎉")
+        LOGGER.info("Support the development of this bouncer at https://crrt.io/patreon 🎉")
         LOGGER.info("Starting up...")
 
         doFirstTimeUsageIfNecessary()

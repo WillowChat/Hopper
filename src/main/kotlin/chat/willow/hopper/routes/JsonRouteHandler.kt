@@ -6,7 +6,40 @@ import spark.Request
 import spark.Response
 import spark.Route
 
-abstract class JsonRouteHandler<RequestType, SuccessType>(val requestAdapter: IStringParser<RequestType>, val successAdapter: IStringSerialiser<SuccessType>, val failureAdapter: IStringSerialiser<ErrorResponseBody>) : IRoute<RequestType, RouteResult<SuccessType, ErrorResponseBody>>, Route {
+object EmptyContext {
+
+    object Builder: IContextBuilder<EmptyContext> {
+        override fun build(request: Request): EmptyContext? {
+            return EmptyContext
+        }
+    }
+
+}
+
+interface IContextBuilder<out ContextType> {
+    fun build(request: Request): ContextType?
+}
+
+data class AuthenticatedContext(val user: String) {
+
+    object Builder: IContextBuilder<AuthenticatedContext> {
+        override fun build(request: Request): AuthenticatedContext? {
+            val authenticatedUser = BasicSparkAuthFilter.authenticatedUser(request)
+
+            if (authenticatedUser == null) {
+                return null
+            } else {
+                return AuthenticatedContext(user = authenticatedUser.username)
+            }
+        }
+    }
+
+}
+
+abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>(val requestAdapter: IStringParser<RequestType>,
+                                                                       val successAdapter: IStringSerialiser<SuccessType>,
+                                                                       val failureAdapter: IStringSerialiser<ErrorResponseBody>,
+                                                                       val contextBuilder: IContextBuilder<ContextType>) : IRoute<RequestType, RouteResult<SuccessType, ErrorResponseBody>, ContextType>, Route {
 
     override fun handle(request: Request, response: Response): Any? {
         val requestTyped = requestAdapter.from(request.body())
@@ -15,9 +48,15 @@ abstract class JsonRouteHandler<RequestType, SuccessType>(val requestAdapter: IS
             return ""
         }
 
-        val authenticatedUser = BasicSparkAuthFilter.authenticatedUser(request)
+        val context = contextBuilder.build(request)
+        if (context == null) {
+            // todo: cleanup - context builder should be able to provide some sort of error
 
-        val result = this.handle(requestTyped, authenticatedUser)
+            response.status(500)
+            return failureAdapter.serialise(unauthenticatedError().failure!!)
+        }
+
+        val result = this.handle(requestTyped, context)
 
         response.status(result.code)
 

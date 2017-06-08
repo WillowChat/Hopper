@@ -1,24 +1,23 @@
 package chat.willow.hopper.routes.sessions
 
 import chat.willow.hopper.HopperRunner
-import chat.willow.hopper.auth.BasicSparkAuthFilter
 import chat.willow.hopper.auth.Pbdfk2HmacSha512PasswordStorage
 import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.loggerFor
-import chat.willow.hopper.routes.JsonRouteHandler
-import chat.willow.hopper.routes.RouteResult
+import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.ErrorResponseBody
-import chat.willow.hopper.routes.stringParser
-import chat.willow.hopper.routes.stringSerialiser
 import com.squareup.moshi.Moshi
 import java.util.*
 
-class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequestBody, SessionsPostResponseBody>(moshi.stringParser(), moshi.stringSerialiser(), moshi.stringSerialiser()) {
+data class SessionsPostRequestBody(val user: String, val password: String)
+
+data class SessionsPostResponseBody(val token: String)
+
+class SessionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<SessionsPostRequestBody, SessionsPostResponseBody, EmptyContext>(moshi.stringParser(), moshi.stringSerialiser(), moshi.stringSerialiser(), EmptyContext.Builder) {
 
     private val LOGGER = loggerFor<SessionsPostRouteHandler>()
 
-    // todo: extract dependencies
-    override fun handle(request: SessionsPostRequestBody, user: BasicSparkAuthFilter.AuthenticatedUser?): RouteResult<SessionsPostResponseBody, ErrorResponseBody> {
+    override fun handle(request: SessionsPostRequestBody, context: EmptyContext): RouteResult<SessionsPostResponseBody, ErrorResponseBody> {
         if (request.user.isNullOrBlank() || request.password.isNullOrBlank()) {
             return RouteResult.failure(code = 400, error = ErrorResponseBody(code = 123, message = "badly formatted user or password"))
 
