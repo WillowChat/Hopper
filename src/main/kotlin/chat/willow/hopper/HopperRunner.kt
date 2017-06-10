@@ -24,7 +24,7 @@ object HopperRunner {
     var userCount = AtomicInteger(-1)
     var users: MutableMap<org.eclipse.jetty.websocket.api.Session, Int> = mutableMapOf()
 
-    val authenticator = UserTokenAuthenticator()
+    val authenticator = UserTokenAuthenticator(HopperDatabase)
     val authHeaderExtractor = AuthHeaderExtractor
 
     val moshi = Moshi.Builder().build()

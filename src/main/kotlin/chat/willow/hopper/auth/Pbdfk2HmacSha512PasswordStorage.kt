@@ -11,6 +11,7 @@ object Pbdfk2HmacSha512PasswordStorage {
     val defaultIterations = 64000
 
     fun compute(plaintext: String, salt: String, iterations: Int = defaultIterations, keyLength: Int = 256): ByteArray? {
+        // todo: don't assert?
         assert(plaintext.length >= 8)
         assert(salt.length >= 8)
         assert(iterations >= 10000)

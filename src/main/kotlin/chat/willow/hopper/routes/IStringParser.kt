@@ -3,7 +3,7 @@ package chat.willow.hopper.routes
 import com.squareup.moshi.Moshi
 
 interface IStringParser<out T> {
-    fun from(string: String?): T?
+    fun parse(string: String?): T?
 }
 
 inline fun <reified Type> Moshi.stringParser(): IStringParser<Type> {
@@ -11,7 +11,7 @@ inline fun <reified Type> Moshi.stringParser(): IStringParser<Type> {
 
     return object : IStringParser<Type> {
 
-        override fun from(string: String?): Type? {
+        override fun parse(string: String?): Type? {
             if (string == null) {
                 return null
             }

@@ -18,7 +18,11 @@ interface ITokenDataSink {
     fun addUserToken(userId: String, newToken: String): Boolean
 }
 
-object HopperDatabase : ILoginDataSource, ITokenDataSink {
+interface ITokensDataSource {
+    fun getUserTokens(username: String): Set<String>?
+}
+
+object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
     private val LOGGER = loggerFor<HopperDatabase>()
 
     val database = Database.connect("jdbc:sqlite:hopper.db", "org.sqlite.JDBC", manager = { ThreadLocalTransactionManager(it, Connection.TRANSACTION_SERIALIZABLE) })
@@ -60,7 +64,7 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink {
         return UserLogin(userId = dbUserLogin.userid, user = dbUserLogin.username, password = dbUserLogin.password)
     }
 
-    fun getUserTokens(username: String): Set<String>? {
+    override fun getUserTokens(username: String): Set<String>? {
         val user = getUserLogin(username)
         if (user == null) {
             LOGGER.info("failed to find tokens for $username")
