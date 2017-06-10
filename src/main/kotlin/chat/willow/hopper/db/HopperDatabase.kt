@@ -27,31 +27,38 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
 
     val database = Database.connect("jdbc:sqlite:hopper.db", "org.sqlite.JDBC", manager = { ThreadLocalTransactionManager(it, Connection.TRANSACTION_SERIALIZABLE) })
 
-    fun <T> transaction(statement: Transaction.() -> T): T {
+    fun <T> transaction(statement: Transaction.() -> T): T? {
         synchronized(HopperDatabase) {
-            return org.jetbrains.exposed.sql.transactions.transaction(TransactionManager.manager.defaultIsolationLevel, 3, statement)
+            try {
+                return org.jetbrains.exposed.sql.transactions.transaction(TransactionManager.manager.defaultIsolationLevel, 3, statement)
+            } catch (e: Throwable) {
+                return null
+            }
         }
     }
 
-    fun makeNewDatabase() {
+    fun makeNewDatabase(): Boolean {
         transaction {
             SchemaUtils.create(Logins)
             SchemaUtils.create(Sessions)
-        }
+        } ?: return false
 
         LOGGER.info("made new database")
+        return true
     }
 
-    fun addNewUser(userId: String, newUsername: String, encodedPassword: String) {
+    fun addNewUser(userId: String, newUsername: String, encodedPassword: String): Boolean {
         val newUser = transaction {
             Login.new {
                 userid = userId
                 username = newUsername
                 password = encodedPassword
             }
-        }
+        } ?: return false
 
         LOGGER.info("made new user: ${newUser.username}")
+
+        return true
     }
 
     override fun getUserLogin(user: String): UserLogin? {
@@ -74,7 +81,7 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
         val tokens = transaction {
             val sessions = Session.find { Sessions.userid eq user.userId }
             sessions.map { it.token }.toSet()
-        }
+        } ?: setOf()
 
         LOGGER.info("found ${tokens.size} tokens for $username")
 
@@ -87,8 +94,7 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
                 userid = userId
                 token = newToken
             }
-        }
-        // todo: handle failure?
+        } ?: return false
 
         LOGGER.info("added session token for $userId")
 
