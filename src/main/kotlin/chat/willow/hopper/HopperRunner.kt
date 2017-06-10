@@ -3,6 +3,7 @@ package chat.willow.hopper
 import chat.willow.hopper.auth.*
 import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.db.HopperDatabase.database
+import chat.willow.hopper.db.ITokenDataSink
 import chat.willow.hopper.routes.connection.ConnectionsGetRouteHandler
 import chat.willow.hopper.routes.connection.ConnectionsPostRouteHandler
 import chat.willow.hopper.routes.connection.Server
@@ -36,6 +37,8 @@ object HopperRunner {
 
     val saltGenerator = IdentifierGenerator(bits = 256)
 
+    val loginMatcher = LoginMatcher(HopperDatabase)
+
     private var warren: IWarrenClient? = null
 
     @JvmStatic fun main(args: Array<String>) {
@@ -44,7 +47,7 @@ object HopperRunner {
 
         doFirstTimeUsageIfNecessary()
 
-        HopperWebService(authHeaderExtractor, authenticator).start()
+        HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator).start()
     }
 
     fun doFirstTimeUsageIfNecessary() {
@@ -104,7 +107,11 @@ object HopperRunner {
 
 }
 
-class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor, private val authenticator: IUserTokenAuthenticator) {
+class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
+                       private val authenticator: IUserTokenAuthenticator,
+                       private val loginMatcher: ILoginMatcher,
+                       private val tokenDataSink: ITokenDataSink,
+                       private val tokenGenerator: IIdentifierGenerator) {
 
     fun start() {
         val service = Service.ignite()
@@ -112,7 +119,7 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor, pr
         service.webSocket("/websocket", HopperWebsocket(authenticator, authHeaderExtractor))
 
         service.path("/session") {
-            service.post("", SessionsPostRouteHandler(HopperRunner.moshi, HopperDatabase, HopperDatabase, HopperRunner.tokenGenerator))
+            service.post("", SessionsPostRouteHandler(HopperRunner.moshi, loginMatcher, tokenDataSink, tokenGenerator))
         }
 
         service.path("/v1") {
