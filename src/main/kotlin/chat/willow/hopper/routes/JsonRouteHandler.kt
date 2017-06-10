@@ -79,6 +79,6 @@ fun <T>jsonSuccess(success: T): RouteResult<T, ErrorResponseBody> {
     return RouteResult.success(value = success)
 }
 
-fun <T>jsonFailure(error: ErrorResponseBody, code: Int): RouteResult<T, ErrorResponseBody> {
-    return RouteResult.failure(code, error)
+fun <T>jsonFailure(code: Int, message: String): RouteResult<T, ErrorResponseBody> {
+    return RouteResult.failure(code, error = ErrorResponseBody(code, message))
 }

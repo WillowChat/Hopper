@@ -43,7 +43,6 @@ class SessionsPostRouteHandler(moshi: Moshi,
         val newToken = tokenGenerator.next()
         // todo: handle collisions?
 
-        // todo: handle failure
         val addedToken = tokenDataSink.addUserToken(userId, newToken)
         if (!addedToken) {
             return null
@@ -53,13 +52,9 @@ class SessionsPostRouteHandler(moshi: Moshi,
     }
 
     object Responses {
-        val badlyFormatted = makeFailure(400, "badly formatted user or password")
-        val badCredentials = makeFailure(401, "credentials didn't match")
-        val serverError = makeFailure(500, "server error")
-
-        private fun makeFailure(code: Int, message: String): RouteResult<SessionsPostResponseBody, ErrorResponseBody> {
-            return RouteResult.failure(code, ErrorResponseBody(code, message))
-        }
+        val badlyFormatted = jsonFailure<SessionsPostResponseBody>(400, "badly formatted user or password")
+        val badCredentials = jsonFailure<SessionsPostResponseBody>(401, "credentials didn't match")
+        val serverError = jsonFailure<SessionsPostResponseBody>(500, "server error")
     }
 
 }
