@@ -5,7 +5,7 @@ import spark.Request
 import spark.Response
 import spark.Service
 
-class BasicSparkAuthFilter(private val authHeaderExtractor: IAuthHeaderExtractor, private val authenticator: IUserTokenAuthenticator, private val service: Service) : Filter {
+class BasicAuthSparkFilter(private val authHeaderExtractor: IAuthHeaderExtractor, private val authenticator: IUserTokenAuthenticator, private val service: Service) : Filter {
 
     companion object {
         val ATTRIBUTE_KEY = "hopper_user"

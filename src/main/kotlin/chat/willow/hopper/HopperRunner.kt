@@ -123,7 +123,7 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
         }
 
         service.path("/v1") {
-            service.before("/*", BasicSparkAuthFilter(authHeaderExtractor, authenticator, service))
+            service.before("/*", BasicAuthSparkFilter(authHeaderExtractor, authenticator, service))
 
             service.path("/connection") {
                 service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi))

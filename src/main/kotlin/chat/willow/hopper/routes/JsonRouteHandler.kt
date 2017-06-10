@@ -1,6 +1,6 @@
 package chat.willow.hopper.routes
 
-import chat.willow.hopper.auth.BasicSparkAuthFilter
+import chat.willow.hopper.auth.BasicAuthSparkFilter
 import chat.willow.hopper.routes.shared.ErrorResponseBody
 import spark.Request
 import spark.Response
@@ -24,7 +24,7 @@ data class AuthenticatedContext(val user: String) {
 
     object Builder: IContextBuilder<AuthenticatedContext> {
         override fun build(request: Request): AuthenticatedContext? {
-            val authenticatedUser = BasicSparkAuthFilter.authenticatedUser(request)
+            val authenticatedUser = BasicAuthSparkFilter.authenticatedUser(request)
 
             if (authenticatedUser == null || authenticatedUser.username.isEmpty()) {
                 return null
