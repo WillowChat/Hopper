@@ -26,7 +26,7 @@ data class AuthenticatedContext(val user: String) {
         override fun build(request: Request): AuthenticatedContext? {
             val authenticatedUser = BasicSparkAuthFilter.authenticatedUser(request)
 
-            if (authenticatedUser == null) {
+            if (authenticatedUser == null || authenticatedUser.username.isEmpty()) {
                 return null
             } else {
                 return AuthenticatedContext(user = authenticatedUser.username)

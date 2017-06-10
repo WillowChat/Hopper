@@ -3,10 +3,10 @@ package chat.willow.hopper
 import chat.willow.hopper.auth.*
 import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.db.HopperDatabase.database
-import chat.willow.hopper.routes.connections.ConnectionsGetRouteHandler
-import chat.willow.hopper.routes.connections.ConnectionsPostRouteHandler
-import chat.willow.hopper.routes.connections.Server
-import chat.willow.hopper.routes.sessions.SessionsPostRouteHandler
+import chat.willow.hopper.routes.connection.ConnectionsGetRouteHandler
+import chat.willow.hopper.routes.connection.ConnectionsPostRouteHandler
+import chat.willow.hopper.routes.connection.Server
+import chat.willow.hopper.routes.session.SessionsPostRouteHandler
 import chat.willow.hopper.websocket.HopperWebsocket
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
@@ -63,7 +63,7 @@ object HopperRunner {
         System.out.println("Please enter a username (letters and digits only, < 32 characters):")
 
         val newUsername = scanner.nextLine()
-        val userId = userIdGenerator.nextSessionId()
+        val userId = userIdGenerator.next()
 
         if (newUsername.isNullOrBlank() || !newUsername.all { it.isLetterOrDigit() || newUsername.length > 32 }) {
             throw RuntimeException("Username can only be letters and digits, relaunch and try again")
@@ -77,7 +77,7 @@ object HopperRunner {
             throw RuntimeException("Password must be within [8..64] characters")
         }
 
-        val salt = saltGenerator.nextSessionId()
+        val salt = saltGenerator.next()
         val computedHashBytes = Pbdfk2HmacSha512PasswordStorage.compute(userPassword, salt) ?: throw RuntimeException("Couldn't compute password hash")
 
         val encodedPassword = Pbdfk2HmacSha512PasswordStorage.encode(salt, computedHashBytes)
@@ -111,16 +111,21 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor, pr
 
         service.webSocket("/websocket", HopperWebsocket(authenticator, authHeaderExtractor))
 
-        service.path("/sessions") {
-            service.post("", SessionsPostRouteHandler(HopperRunner.moshi))
+        service.path("/session") {
+            service.post("", SessionsPostRouteHandler(HopperRunner.moshi, HopperDatabase, HopperDatabase, HopperRunner.tokenGenerator))
         }
 
         service.path("/v1") {
             service.before("/*", BasicSparkAuthFilter(authHeaderExtractor, authenticator, service))
 
-            service.path("/connections") {
+            service.path("/connection") {
                 service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi))
                 service.post("", ConnectionsPostRouteHandler(HopperRunner.moshi))
+
+//              /connection/1
+//              /connection/1/start
+//              /connection/1/stop
+
             }
         }
     }

@@ -1,7 +1,6 @@
-package chat.willow.hopper.routes.connections
+package chat.willow.hopper.routes.connection
 
 import chat.willow.hopper.HopperRunner
-import chat.willow.hopper.auth.BasicSparkAuthFilter
 import chat.willow.hopper.loggerFor
 import chat.willow.hopper.routes.AuthenticatedContext
 import chat.willow.hopper.routes.JsonRouteHandler
@@ -15,7 +14,13 @@ data class ConnectionsGetResponseBody(val connections: Set<Server>)
 
 data class Server(val id: String, val server: String, val nick: String)
 
-class ConnectionsGetRouteHandler(moshi: Moshi) : JsonRouteHandler<EmptyBody, ConnectionsGetResponseBody, AuthenticatedContext>(EmptyBody, moshi.stringSerialiser(), moshi.stringSerialiser(), AuthenticatedContext.Builder) {
+class ConnectionsGetRouteHandler(moshi: Moshi) :
+        JsonRouteHandler<EmptyBody, ConnectionsGetResponseBody, AuthenticatedContext>(
+                EmptyBody,
+                moshi.stringSerialiser(),
+                moshi.stringSerialiser(),
+                AuthenticatedContext.Builder
+        ) {
 
     private val LOGGER = loggerFor<ConnectionsGetRouteHandler>()
 

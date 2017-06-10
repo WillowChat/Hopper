@@ -3,10 +3,14 @@ package chat.willow.hopper.auth
 import java.math.BigInteger
 import java.security.SecureRandom
 
-class IdentifierGenerator(val bits: Int = 260) {
+interface IIdentifierGenerator {
+    fun next(): String
+}
+
+class IdentifierGenerator(val bits: Int = 260): IIdentifierGenerator {
     private val random = SecureRandom()
 
-    fun nextSessionId(): String {
+    override fun next(): String {
         return BigInteger(bits, random).toString(32)
     }
 }

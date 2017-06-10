@@ -1,7 +1,6 @@
 package chat.willow.hopper.db
 
 import chat.willow.hopper.loggerFor
-import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
@@ -9,7 +8,17 @@ import org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManager
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.sql.Connection
 
-object HopperDatabase {
+data class UserLogin(val userId: String, val user: String, val password: String)
+
+interface ILoginDataSource {
+    fun getUserLogin(user: String): UserLogin?
+}
+
+interface ITokenDataSink {
+    fun addUserToken(userId: String, newToken: String): Boolean
+}
+
+object HopperDatabase : ILoginDataSource, ITokenDataSink {
     private val LOGGER = loggerFor<HopperDatabase>()
 
     val database = Database.connect("jdbc:sqlite:hopper.db", "org.sqlite.JDBC", manager = { ThreadLocalTransactionManager(it, Connection.TRANSACTION_SERIALIZABLE) })
@@ -41,25 +50,25 @@ object HopperDatabase {
         LOGGER.info("made new user: ${newUser.username}")
     }
 
-    fun getUser(username: String): Login? {
-        val user = transaction {
-            Login.find { Logins.username eq username }.firstOrNull() ?: return@transaction null
-        }
+    override fun getUserLogin(user: String): UserLogin? {
+        val dbUserLogin = transaction {
+            Login.find { Logins.username eq user }.firstOrNull() ?: return@transaction null
+        } ?: return null
 
-        LOGGER.info("tried to find user $username: ${user?.userid}")
+        LOGGER.info("tried to find user $user: ${dbUserLogin.userid}")
 
-        return user
+        return UserLogin(userId = dbUserLogin.userid, user = dbUserLogin.username, password = dbUserLogin.password)
     }
 
     fun getUserTokens(username: String): Set<String>? {
-        val user = getUser(username)
+        val user = getUserLogin(username)
         if (user == null) {
             LOGGER.info("failed to find tokens for $username")
             return null
         }
 
         val tokens = transaction {
-            val sessions = Session.find { Sessions.userid eq user.userid }
+            val sessions = Session.find { Sessions.userid eq user.userId }
             sessions.map { it.token }.toSet()
         }
 
@@ -68,15 +77,18 @@ object HopperDatabase {
         return tokens
     }
 
-    fun addUserToken(userId: String, newToken: String) {
+    override fun addUserToken(userId: String, newToken: String): Boolean {
         transaction {
             Session.new {
                 userid = userId
                 token = newToken
             }
         }
+        // todo: handle failure?
 
         LOGGER.info("added session token for $userId")
+
+        return true
     }
 
 }

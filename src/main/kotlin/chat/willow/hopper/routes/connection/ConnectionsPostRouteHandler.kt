@@ -1,7 +1,6 @@
-package chat.willow.hopper.routes.connections
+package chat.willow.hopper.routes.connection
 
 import chat.willow.hopper.HopperRunner
-import chat.willow.hopper.auth.BasicSparkAuthFilter
 import chat.willow.hopper.loggerFor
 import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.ErrorResponseBody
@@ -13,14 +12,20 @@ data class ConnectionsPostRequestBody(val server: String, val nick: String)
 
 data class ConnectionsPostResponseBody(val id: String)
 
-class ConnectionsPostRouteHandler(moshi: Moshi) : JsonRouteHandler<ConnectionsPostRequestBody, ConnectionsPostResponseBody, AuthenticatedContext>(moshi.stringParser(), moshi.stringSerialiser(), moshi.stringSerialiser(), AuthenticatedContext.Builder) {
+class ConnectionsPostRouteHandler(moshi: Moshi) :
+        JsonRouteHandler<ConnectionsPostRequestBody, ConnectionsPostResponseBody, AuthenticatedContext>(
+                moshi.stringParser(),
+                moshi.stringSerialiser(),
+                moshi.stringSerialiser(),
+                AuthenticatedContext.Builder
+        ) {
 
     private val LOGGER = loggerFor<ConnectionsPostRouteHandler>()
 
     override fun handle(request: ConnectionsPostRequestBody, context: AuthenticatedContext): RouteResult<ConnectionsPostResponseBody, ErrorResponseBody> {
         LOGGER.info("handling POST /connections: $request")
 
-        val serverId = HopperRunner.serverIdGenerator.nextSessionId()
+        val serverId = HopperRunner.serverIdGenerator.next()
         val warren = WarrenClient.build {
             server(request.server)
             user(request.nick)
