@@ -74,3 +74,11 @@ abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>(val reque
     }
 
 }
+
+fun <T>jsonSuccess(success: T): RouteResult<T, ErrorResponseBody> {
+    return RouteResult.success(value = success)
+}
+
+fun <T>jsonFailure(error: ErrorResponseBody, code: Int): RouteResult<T, ErrorResponseBody> {
+    return RouteResult.failure(code, error)
+}
