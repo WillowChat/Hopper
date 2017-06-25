@@ -4,6 +4,7 @@ import chat.willow.hopper.auth.*
 import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.db.ITokenDataSink
+import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.connection.ConnectionsGetRouteHandler
 import chat.willow.hopper.routes.connection.ConnectionsPostRouteHandler
 import chat.willow.hopper.routes.connection.Server
@@ -15,29 +16,18 @@ import org.jetbrains.exposed.sql.name
 import spark.Service
 import java.io.File
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 
 object HopperRunner {
 
     private val LOGGER = loggerFor<HopperRunner>()
 
-    var userCount = AtomicInteger(-1)
     var users: MutableMap<org.eclipse.jetty.websocket.api.Session, Int> = mutableMapOf()
-
-    val authenticator = UserTokenAuthenticator(HopperDatabase)
-    val authHeaderExtractor = AuthHeaderExtractor
-
-    val moshi = Moshi.Builder().build()
     val usersToServers = mutableMapOf<String, Set<Server>>()
     val serversToWarrens = mutableMapOf<String, IWarrenClient?>()
-
-    val tokenGenerator = IdentifierGenerator(bits = 260)
     val serverIdGenerator = IdentifierGenerator(bits = 130)
     val userIdGenerator = IdentifierGenerator(bits = 130)
-
+    val moshi = Moshi.Builder().build()
     val saltGenerator = IdentifierGenerator(bits = 256)
-
-    val loginMatcher = LoginMatcher(HopperDatabase)
 
     private var warren: IWarrenClient? = null
 
@@ -46,6 +36,12 @@ object HopperRunner {
         LOGGER.info("Starting up...")
 
         doFirstTimeUsageIfNecessary()
+
+        val authenticator = UserTokenAuthenticator(HopperDatabase)
+        val authHeaderExtractor = AuthHeaderExtractor
+
+        val tokenGenerator = IdentifierGenerator(bits = 260)
+        val loginMatcher = LoginMatcher(HopperDatabase, Pbdfk2HmacSha512PasswordStorage)
 
         HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator).start()
     }
@@ -81,9 +77,9 @@ object HopperRunner {
         }
 
         val salt = saltGenerator.next()
-        val computedHashBytes = Pbdfk2HmacSha512PasswordStorage.compute(userPassword, salt) ?: throw RuntimeException("Couldn't compute password hash")
+        val derivedKey = Pbdfk2HmacSha512PasswordStorage.deriveKey(userPassword, salt) ?: throw RuntimeException("Couldn't derive key from password")
 
-        val encodedPassword = Pbdfk2HmacSha512PasswordStorage.encode(salt, computedHashBytes)
+        val encodedPassword = Pbdfk2HmacSha512PasswordStorage.encode(salt, derivedKey) ?: throw RuntimeException("Couldn't encode derived key")
 
         LOGGER.info("database name: ${database.name}")
 

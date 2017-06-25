@@ -3,7 +3,7 @@ package chat.willow.hopper.routes.session
 import chat.willow.hopper.auth.IIdentifierGenerator
 import chat.willow.hopper.auth.ILoginMatcher
 import chat.willow.hopper.db.ITokenDataSink
-import chat.willow.hopper.loggerFor
+import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.ErrorResponseBody
 import com.squareup.moshi.Moshi
@@ -41,7 +41,6 @@ class SessionsPostRouteHandler(moshi: Moshi,
 
     private fun storeNewUserToken(userId: String): String? {
         val newToken = tokenGenerator.next()
-        // todo: handle collisions?
 
         val addedToken = tokenDataSink.addUserToken(userId, newToken)
         if (!addedToken) {

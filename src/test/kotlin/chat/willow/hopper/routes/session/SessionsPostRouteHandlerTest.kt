@@ -44,7 +44,7 @@ class SessionsPostRouteHandlerTest {
     }
 
     @Test fun `correct user and password results in correct new token`() {
-        whenever(loginMatcher.findMatching("someone", testPassword = "something")).thenReturn(UserLogin(userId = "1", user = "someone", password = ""))
+        whenever(loginMatcher.findMatching("someone", testPassword = "something")).thenReturn(UserLogin(userId = "1", user = "someone", encodedAuthEntry = ""))
         whenever(tokenDataSink.addUserToken("1", "token")).thenReturn(true)
         whenever(tokenGenerator.next()).thenReturn("token")
 
@@ -54,7 +54,7 @@ class SessionsPostRouteHandlerTest {
     }
 
     @Test fun `incorrect user results in 401`() {
-        whenever(loginMatcher.findMatching("someone", testPassword = "something")).thenReturn(UserLogin(userId = "1", user = "someone", password = ""))
+        whenever(loginMatcher.findMatching("someone", testPassword = "something")).thenReturn(UserLogin(userId = "1", user = "someone", encodedAuthEntry = ""))
 
         val response = sut.handle(SessionsPostRequestBody(user = "someone_else", password = "something"), EmptyContext)
 
@@ -62,7 +62,7 @@ class SessionsPostRouteHandlerTest {
     }
 
     @Test fun `incorrect password results in 401`() {
-        whenever(loginMatcher.findMatching("someone", testPassword = "something_else")).thenReturn(UserLogin(userId = "1", user = "someone", password = ""))
+        whenever(loginMatcher.findMatching("someone", testPassword = "something_else")).thenReturn(UserLogin(userId = "1", user = "someone", encodedAuthEntry = ""))
 
         val response = sut.handle(SessionsPostRequestBody(user = "someone", password = "not_something_else"), EmptyContext)
 

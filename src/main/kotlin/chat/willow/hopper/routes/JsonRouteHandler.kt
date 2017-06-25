@@ -36,10 +36,12 @@ data class AuthenticatedContext(val user: String) {
 
 }
 
-abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>(val requestAdapter: IStringParser<RequestType>,
-                                                                       val successAdapter: IStringSerialiser<SuccessType>,
-                                                                       val failureAdapter: IStringSerialiser<ErrorResponseBody>,
-                                                                       val contextBuilder: IContextBuilder<ContextType>) : IRoute<RequestType, RouteResult<SuccessType, ErrorResponseBody>, ContextType>, Route {
+abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>
+    (val requestAdapter: IStringParser<RequestType>,
+     val successAdapter: IStringSerialiser<SuccessType>,
+     val failureAdapter: IStringSerialiser<ErrorResponseBody>,
+     val contextBuilder: IContextBuilder<ContextType>)
+    : IRoute<RequestType, RouteResult<SuccessType, ErrorResponseBody>, ContextType>, Route {
 
     override fun handle(request: Request, response: Response): Any? {
         val requestTyped = requestAdapter.parse(request.body())
@@ -53,7 +55,7 @@ abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>(val reque
             // todo: cleanup - context builder should be able to provide some sort of error
 
             response.status(500)
-            return failureAdapter.serialise(unauthenticatedError().failure!!)
+            return failureAdapter.serialise(unauthenticatedError.failure!!)
         }
 
         val result = this.handle(requestTyped, context)
@@ -66,13 +68,11 @@ abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>(val reque
             return failureAdapter.serialise(result.failure)
         }
 
-        throw RuntimeException("not success or failure")
+        return failureAdapter.serialise(serverError.failure!!)
     }
 
-    fun unauthenticatedError(): RouteResult<SuccessType, ErrorResponseBody> {
-        return RouteResult.failure(code = 401, error = ErrorResponseBody(code = 123, message = "not authenticated"))
-    }
-
+    val unauthenticatedError = jsonFailure<SuccessType>(401, "not authenticated")
+    val serverError = jsonFailure<SuccessType>(500, "server error")
 }
 
 fun <T>jsonSuccess(success: T): RouteResult<T, ErrorResponseBody> {

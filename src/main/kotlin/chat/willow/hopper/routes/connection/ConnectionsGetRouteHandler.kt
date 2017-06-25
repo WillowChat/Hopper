@@ -1,7 +1,7 @@
 package chat.willow.hopper.routes.connection
 
 import chat.willow.hopper.HopperRunner
-import chat.willow.hopper.loggerFor
+import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.AuthenticatedContext
 import chat.willow.hopper.routes.JsonRouteHandler
 import chat.willow.hopper.routes.RouteResult

@@ -2,7 +2,7 @@ package chat.willow.hopper.websocket
 
 import chat.willow.hopper.auth.IAuthHeaderExtractor
 import chat.willow.hopper.auth.IUserTokenAuthenticator
-import chat.willow.hopper.loggerFor
+import chat.willow.hopper.logging.loggerFor
 import org.eclipse.jetty.websocket.api.Session
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect

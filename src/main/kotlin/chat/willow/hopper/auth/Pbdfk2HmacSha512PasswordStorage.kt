@@ -6,19 +6,57 @@ import java.util.*
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-object Pbdfk2HmacSha512PasswordStorage {
+typealias EncodedEntry = String
 
-    val defaultIterations = 64000
+interface IPbdfk2HmacSha512PasswordStorage {
 
-    fun compute(plaintext: String, salt: String, iterations: Int = defaultIterations, keyLength: Int = 256): ByteArray? {
-        // todo: don't assert?
-        assert(plaintext.length >= 8)
-        assert(salt.length >= 8)
-        assert(iterations >= 10000)
+    fun deriveKey(plaintext: String,
+                  salt: String,
+                  iterations: Int = Pbdfk2HmacSha512PasswordStorage.DEFAULT_ITERATIONS,
+                  keyLengthBits: Int = Pbdfk2HmacSha512PasswordStorage.DEFAULT_KEY_LENGTH_BITS): ByteArray?
+
+    fun encode(salt: String,
+               computedHash: ByteArray,
+               iterations: Int = Pbdfk2HmacSha512PasswordStorage.DEFAULT_ITERATIONS): EncodedEntry?
+
+    fun decode(encodedEntry: EncodedEntry): Pbdfk2HmacSha512PasswordStorage.DecodedEntry?
+
+}
+
+object Pbdfk2HmacSha512PasswordStorage: IPbdfk2HmacSha512PasswordStorage {
+
+    val DEFAULT_ITERATIONS = 64000
+    val DEFAULT_KEY_LENGTH_BITS = 256
+
+    private val BITS_IN_A_BYTE = 8
+
+    private val MIN_ITERATIONS = 10000
+    private val MAX_ITERATIONS = 1000000
+    private val MIN_SALT_LENGTH = 8
+    private val MAX_SALT_LENGTH = 256
+    private val MIN_PLAINTEXT_LENGTH = 8
+    private val MAX_PLAINTEXT_LENGTH = 256
+
+    private val MIN_ENCODED_HASH_SANITY = 8
+
+    override fun deriveKey(plaintext: String, salt: String, iterations: Int, keyLengthBits: Int): ByteArray? {
+        if (plaintext.length < MIN_PLAINTEXT_LENGTH || plaintext.length > MAX_PLAINTEXT_LENGTH) {
+            return null
+        }
+
+        if (salt.length < MIN_SALT_LENGTH || salt.length > MAX_SALT_LENGTH) {
+            return null
+        }
+
+        if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) {
+            return null
+        }
 
         try {
+            // TODO: Extract and make testable by wrapping SKF stuff
+
             val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
-            val spec = PBEKeySpec(plaintext.toCharArray(), salt.toByteArray(charset = Charsets.UTF_8), iterations, keyLength)
+            val spec = PBEKeySpec(plaintext.toCharArray(), salt.toByteArray(charset = Charsets.UTF_8), iterations, keyLengthBits)
             val key = skf.generateSecret(spec)
 
             if (key.encoded.isEmpty()) {
@@ -35,18 +73,23 @@ object Pbdfk2HmacSha512PasswordStorage {
     }
 
     // algorithm:iterations:hashSize:salt:hash
-    // 1:64000:hashsize:salt:hash
+    // 1:64000:hashsizebits:salt:hash
 
-    fun encode(salt: String, computedHash: ByteArray, iterations: Int = defaultIterations): String {
-        assert(!computedHash.isEmpty())
-        assert(!salt.contains(':'))
+    override fun encode(salt: String, computedHash: ByteArray, iterations: Int): String? {
+        if (computedHash.isEmpty()) {
+            return null
+        }
+
+        if (salt.contains(':')) {
+            return null
+        }
 
         val encodedHash = Base64.getEncoder().encodeToString(computedHash)
-        return "1:$iterations:${computedHash.size}:$salt:$encodedHash"
+        return "1:$iterations:${computedHash.size * BITS_IN_A_BYTE}:$salt:$encodedHash"
     }
 
-    fun decode(encodedPassword: String): Decoded? {
-        val parts = encodedPassword.split(':', limit = 5)
+    override fun decode(encodedEntry: String): DecodedEntry? {
+        val parts = encodedEntry.split(':', limit = 5)
         if (parts.any { it.contains(":") } || parts.size != 5) {
             return null
         }
@@ -56,9 +99,21 @@ object Pbdfk2HmacSha512PasswordStorage {
         val salt = parts.getOrNull(3) ?: return null
         val encodedHash = parts.getOrNull(4) ?: return null
 
-        return Decoded(encodedHash, iterations, hashSize, salt)
+        if (salt.length < MIN_SALT_LENGTH || salt.length > MAX_SALT_LENGTH) {
+            return null
+        }
+
+        if (iterations < MIN_ITERATIONS || iterations > MAX_ITERATIONS) {
+            return null
+        }
+
+        if (encodedHash.length < MIN_ENCODED_HASH_SANITY) {
+            return null
+        }
+
+        return DecodedEntry(encodedHash, iterations, hashSize, salt)
     }
 
-    data class Decoded(val encodedHash: String, val iterations: Int, val hashSize: Int, val salt: String)
+    data class DecodedEntry(val derivedKeyHash: String, val iterations: Int, val hashSize: Int, val salt: String)
 
 }

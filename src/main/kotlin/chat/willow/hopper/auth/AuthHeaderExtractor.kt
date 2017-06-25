@@ -3,7 +3,7 @@ package chat.willow.hopper.auth
 import java.io.UnsupportedEncodingException
 import java.util.*
 
-typealias UserAndToken = Pair<String, String>
+data class UserAndToken(val user: String, val token: String)
 
 interface IAuthHeaderExtractor {
     fun extract(headers: Map<String, List<String?>>): UserAndToken?
@@ -52,6 +52,6 @@ object AuthHeaderExtractor : IAuthHeaderExtractor {
         val username = userToToken.getOrNull(0) ?: return null
         val token = userToToken.getOrNull(1) ?: return null
 
-        return (username to token)
+        return UserAndToken(username, token)
     }
 }

@@ -1,6 +1,6 @@
 package chat.willow.hopper.db
 
-import chat.willow.hopper.loggerFor
+import chat.willow.hopper.logging.loggerFor
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
@@ -8,7 +8,7 @@ import org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManager
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import java.sql.Connection
 
-data class UserLogin(val userId: String, val user: String, val password: String)
+data class UserLogin(val userId: String, val user: String, val encodedAuthEntry: String)
 
 interface ILoginDataSource {
     fun getUserLogin(user: String): UserLogin?
@@ -68,7 +68,7 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
 
         LOGGER.info("tried to find user $user: ${dbUserLogin.userid}")
 
-        return UserLogin(userId = dbUserLogin.userid, user = dbUserLogin.username, password = dbUserLogin.password)
+        return UserLogin(userId = dbUserLogin.userid, user = dbUserLogin.username, encodedAuthEntry = dbUserLogin.password)
     }
 
     override fun getUserTokens(username: String): Set<String>? {

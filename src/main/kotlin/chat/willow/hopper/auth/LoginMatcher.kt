@@ -8,23 +8,29 @@ interface ILoginMatcher {
     fun findMatching(testUser: String, testPassword: String): UserLogin?
 }
 
-class LoginMatcher(private val loginDataSource: ILoginDataSource): ILoginMatcher {
+class LoginMatcher(private val loginDataSource: ILoginDataSource, private val passwordStorage: IPbdfk2HmacSha512PasswordStorage): ILoginMatcher {
 
     override fun findMatching(testUser: String, testPassword: String): UserLogin? {
         val dbUser = loginDataSource.getUserLogin(testUser) ?: return null
-        val dbStoredPassword = Pbdfk2HmacSha512PasswordStorage.decode(dbUser.password) ?: return null
+        val dbStoredAuthEntry = passwordStorage.decode(dbUser.encodedAuthEntry) ?: return null
 
-        // todo: validate key length
-        // todo: make *8 clearer in keylength
-        val hashedProvidedPassword = Pbdfk2HmacSha512PasswordStorage.compute(testPassword, salt = dbStoredPassword.salt, iterations = dbStoredPassword.iterations, keyLength = dbStoredPassword.hashSize * 8) ?: return null
-        val base64ProvidedPassword = Base64.getEncoder().encodeToString(hashedProvidedPassword)
+        val derivedKeyFromProvidedPassword = passwordStorage.deriveKey(
+                testPassword,
+                salt = dbStoredAuthEntry.salt,
+                iterations = dbStoredAuthEntry.iterations,
+                keyLengthBits = dbStoredAuthEntry.hashSize) ?: return null
 
-        // todo: sanity check provided and stored hashes
+        val base64DerivedKeyFromProvidedPassword = Base64.getEncoder().encodeToString(derivedKeyFromProvidedPassword)
 
-        if (base64ProvidedPassword != dbStoredPassword.encodedHash) {
+        if (base64DerivedKeyFromProvidedPassword.isEmpty()) {
+            return null
+        }
+
+        if (base64DerivedKeyFromProvidedPassword != dbStoredAuthEntry.derivedKeyHash) {
             return null
         } else {
             return dbUser
         }
     }
+
 }
