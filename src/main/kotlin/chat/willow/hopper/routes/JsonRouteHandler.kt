@@ -44,7 +44,8 @@ abstract class JsonRouteHandler<RequestType, SuccessType, ContextType>
     : IRoute<RequestType, RouteResult<SuccessType, ErrorResponseBody>, ContextType>, Route {
 
     override fun handle(request: Request, response: Response): Any? {
-        val requestTyped = requestAdapter.parse(request.body())
+        val body = try { request.body() } catch (e: Exception) { return "" }
+        val requestTyped = requestAdapter.parse(body)
         if (requestTyped == null) {
             response.status(400)
             return ""

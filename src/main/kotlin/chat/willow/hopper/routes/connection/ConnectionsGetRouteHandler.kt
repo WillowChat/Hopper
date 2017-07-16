@@ -1,6 +1,9 @@
 package chat.willow.hopper.routes.connection
 
 import chat.willow.hopper.HopperRunner
+import chat.willow.hopper.connections.HopperConnection
+import chat.willow.hopper.connections.HopperConnections
+import chat.willow.hopper.connections.IHopperConnections
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.AuthenticatedContext
 import chat.willow.hopper.routes.JsonRouteHandler
@@ -10,11 +13,9 @@ import chat.willow.hopper.routes.shared.ErrorResponseBody
 import chat.willow.hopper.routes.stringSerialiser
 import com.squareup.moshi.Moshi
 
-data class ConnectionsGetResponseBody(val connections: Set<Server>)
+data class ConnectionsGetResponseBody(val connections: Set<HopperConnection>)
 
-data class Server(val id: String, val server: String, val nick: String)
-
-class ConnectionsGetRouteHandler(moshi: Moshi) :
+class ConnectionsGetRouteHandler(moshi: Moshi, private val connections: IHopperConnections) :
         JsonRouteHandler<EmptyBody, ConnectionsGetResponseBody, AuthenticatedContext>(
                 EmptyBody,
                 moshi.stringSerialiser(),
@@ -27,7 +28,7 @@ class ConnectionsGetRouteHandler(moshi: Moshi) :
     override fun handle(request: EmptyBody, context: AuthenticatedContext): RouteResult<ConnectionsGetResponseBody, ErrorResponseBody> {
         LOGGER.info("handling GET /connections: $request")
 
-        val servers = HopperRunner.usersToServers[context.user] ?: mutableSetOf()
+        val servers = connections.all()
 
         return RouteResult.success(value = ConnectionsGetResponseBody(servers))
     }

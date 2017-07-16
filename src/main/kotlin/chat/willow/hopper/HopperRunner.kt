@@ -1,13 +1,16 @@
 package chat.willow.hopper
 
 import chat.willow.hopper.auth.*
+import chat.willow.hopper.connections.HopperConnections
+import chat.willow.hopper.connections.IHopperConnections
 import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.db.ITokenDataSink
 import chat.willow.hopper.logging.loggerFor
+import chat.willow.hopper.routes.connection.ConnectionStartRouteHandler
+import chat.willow.hopper.routes.connection.ConnectionStopRouteHandler
 import chat.willow.hopper.routes.connection.ConnectionsGetRouteHandler
 import chat.willow.hopper.routes.connection.ConnectionsPostRouteHandler
-import chat.willow.hopper.routes.connection.Server
 import chat.willow.hopper.routes.session.SessionsPostRouteHandler
 import chat.willow.hopper.websocket.HopperWebsocket
 import chat.willow.warren.IWarrenClient
@@ -22,12 +25,11 @@ object HopperRunner {
     private val LOGGER = loggerFor<HopperRunner>()
 
     var users: MutableMap<org.eclipse.jetty.websocket.api.Session, Int> = mutableMapOf()
-    val usersToServers = mutableMapOf<String, Set<Server>>()
-    val serversToWarrens = mutableMapOf<String, IWarrenClient?>()
-    val serverIdGenerator = IdentifierGenerator(bits = 130)
-    val userIdGenerator = IdentifierGenerator(bits = 130)
-    val moshi = Moshi.Builder().build()
+
     val saltGenerator = IdentifierGenerator(bits = 256)
+    val userIdGenerator = IdentifierGenerator(bits = 130)
+
+    val moshi = Moshi.Builder().build()
 
     private var warren: IWarrenClient? = null
 
@@ -43,7 +45,10 @@ object HopperRunner {
         val tokenGenerator = IdentifierGenerator(bits = 260)
         val loginMatcher = LoginMatcher(HopperDatabase, Pbdfk2HmacSha512PasswordStorage)
 
-        HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator).start()
+        val serverIdGenerator = IdentifierGenerator(bits = 130)
+        val connections = HopperConnections(serverIdGenerator)
+
+        HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator, connections).start()
     }
 
     fun doFirstTimeUsageIfNecessary() {
@@ -107,7 +112,8 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
                        private val authenticator: IUserTokenAuthenticator,
                        private val loginMatcher: ILoginMatcher,
                        private val tokenDataSink: ITokenDataSink,
-                       private val tokenGenerator: IIdentifierGenerator) {
+                       private val tokenGenerator: IIdentifierGenerator,
+                       private val connections: IHopperConnections) {
 
     fun start() {
         val service = Service.ignite()
@@ -122,9 +128,13 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
             service.before("/*", BasicAuthSparkFilter(authHeaderExtractor, authenticator, service))
 
             service.path("/connection") {
-                service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi))
-                service.post("", ConnectionsPostRouteHandler(HopperRunner.moshi))
+                service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi, connections))
+                service.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections))
 
+                service.path("/:id") {
+                    service.get("/start", ConnectionStartRouteHandler(HopperRunner.moshi, connections))
+                    service.get("/stop", ConnectionStopRouteHandler(HopperRunner.moshi, connections))
+                }
 //              /connection/1
 //              /connection/1/start
 //              /connection/1/stop

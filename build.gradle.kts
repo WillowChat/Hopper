@@ -69,7 +69,9 @@ dependencies {
     compile("org.slf4j:slf4j-api:1.7.25")
     compile("org.slf4j:slf4j-simple:1.7.25")
 
-    compile("com.sparkjava:spark-core:2.5.5")
+    compile("com.google.guava:guava:22.0")
+
+    compile("com.sparkjava:spark-core:2.6.0")
 
     compile("chat.willow.warren:Warren:2.1.0.5")
 

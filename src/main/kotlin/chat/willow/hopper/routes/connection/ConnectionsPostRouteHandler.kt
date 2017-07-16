@@ -1,18 +1,22 @@
 package chat.willow.hopper.routes.connection
 
 import chat.willow.hopper.HopperRunner
+import chat.willow.hopper.connections.HopperConnection
+import chat.willow.hopper.connections.IHopperConnections
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.ErrorResponseBody
 import chat.willow.warren.WarrenClient
+import com.google.common.net.HostSpecifier
+import com.google.common.net.InternetDomainName
 import com.squareup.moshi.Moshi
 import kotlin.concurrent.thread
 
-data class ConnectionsPostRequestBody(val server: String, val nick: String)
+data class ConnectionsPostRequestBody(val host: String, val port: Int, val tls: Boolean, val nick: String)
 
-data class ConnectionsPostResponseBody(val id: String)
+data class ConnectionsPostResponseBody(val connection: HopperConnection)
 
-class ConnectionsPostRouteHandler(moshi: Moshi) :
+class ConnectionsPostRouteHandler(moshi: Moshi, private val connections: IHopperConnections) :
         JsonRouteHandler<ConnectionsPostRequestBody, ConnectionsPostResponseBody, AuthenticatedContext>(
                 moshi.stringParser(),
                 moshi.stringSerialiser(),
@@ -25,32 +29,21 @@ class ConnectionsPostRouteHandler(moshi: Moshi) :
     override fun handle(request: ConnectionsPostRequestBody, context: AuthenticatedContext): RouteResult<ConnectionsPostResponseBody, ErrorResponseBody> {
         LOGGER.info("handling POST /connections: $request")
 
-        val serverId = HopperRunner.serverIdGenerator.next()
-        val warren = WarrenClient.build {
-            server(request.server)
-            user(request.nick)
+        val hostValid = HostSpecifier.isValid(request.host)
+        if (!hostValid) {
+            return jsonFailure(400, "host failed validation")
         }
 
-        warren.events.onAny {
-            HopperRunner.broadcast("warren event $serverId: $it")
+        val portValid = request.port in 1..65535
+        if (!portValid) {
+            return jsonFailure(400, "port failed validation")
         }
 
-        thread {
-            LOGGER.info("warren starting $serverId")
-            warren.start()
-            LOGGER.info("warren ended $serverId")
-        }
+        // todo: validate nickname?
 
-        HopperRunner.serversToWarrens[serverId] = warren
+        val connection = connections.add(request.host, request.port, request.tls, request.nick) ?: return jsonFailure(500, "failed to create connection")
 
-        val server = Server(id = serverId, server = request.server, nick = request.nick)
-
-        var currentServers = HopperRunner.usersToServers[context.user] ?: mutableSetOf()
-        currentServers += server
-
-        HopperRunner.usersToServers[context.user] = currentServers
-
-        return RouteResult.success(value = ConnectionsPostResponseBody(id = serverId))
+        return RouteResult.success(value = ConnectionsPostResponseBody(connection))
     }
 
 }
