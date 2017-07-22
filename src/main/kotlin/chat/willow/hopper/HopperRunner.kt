@@ -7,10 +7,7 @@ import chat.willow.hopper.db.HopperDatabase
 import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.db.ITokenDataSink
 import chat.willow.hopper.logging.loggerFor
-import chat.willow.hopper.routes.connection.ConnectionStartRouteHandler
-import chat.willow.hopper.routes.connection.ConnectionStopRouteHandler
-import chat.willow.hopper.routes.connection.ConnectionsGetRouteHandler
-import chat.willow.hopper.routes.connection.ConnectionsPostRouteHandler
+import chat.willow.hopper.routes.connection.*
 import chat.willow.hopper.routes.session.SessionsPostRouteHandler
 import chat.willow.hopper.websocket.HopperWebsocket
 import chat.willow.warren.IWarrenClient
@@ -34,7 +31,7 @@ object HopperRunner {
     private var warren: IWarrenClient? = null
 
     @JvmStatic fun main(args: Array<String>) {
-        LOGGER.info("Support the development of this bouncer at https://crrt.io/patreon 🎉")
+        LOGGER.info("Support the development of this bouncer at https://crrt.io/patreon 🐰🎉")
         LOGGER.info("Starting up...")
 
         doFirstTimeUsageIfNecessary()
@@ -116,29 +113,27 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
                        private val connections: IHopperConnections) {
 
     fun start() {
-        val service = Service.ignite()
+        val http = Service.ignite()
 
-        service.webSocket("/websocket", HopperWebsocket(authenticator, authHeaderExtractor))
+        http.webSocket("/websocket", HopperWebsocket(authenticator, authHeaderExtractor))
 
-        service.path("/session") {
-            service.post("", SessionsPostRouteHandler(HopperRunner.moshi, loginMatcher, tokenDataSink, tokenGenerator))
+        http.path("/session") {
+            http.post("", SessionsPostRouteHandler(HopperRunner.moshi, loginMatcher, tokenDataSink, tokenGenerator))
         }
 
-        service.path("/v1") {
-            service.before("/*", BasicAuthSparkFilter(authHeaderExtractor, authenticator, service))
+        http.path("/v1") {
+            http.before("/*", BasicAuthSparkFilter(authHeaderExtractor, authenticator, http))
 
-            service.path("/connection") {
-                service.get("", ConnectionsGetRouteHandler(HopperRunner.moshi, connections))
-                service.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections))
+            http.path("/connection") {
+                http.get("", ConnectionsGetRouteHandler(HopperRunner.moshi, connections))
+                http.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections))
 
-                service.path("/:id") {
-                    service.get("/start", ConnectionStartRouteHandler(HopperRunner.moshi, connections))
-                    service.get("/stop", ConnectionStopRouteHandler(HopperRunner.moshi, connections))
+                http.path("/:id") {
+                    http.get("", ConnectionGetRouteHandler(HopperRunner.moshi, connections))
+                    http.delete("", ConnectionDeleteRouteHandler(HopperRunner.moshi, connections))
+                    http.get("/start", ConnectionStartRouteHandler(HopperRunner.moshi, connections))
+                    http.get("/stop", ConnectionStopRouteHandler(HopperRunner.moshi, connections))
                 }
-//              /connection/1
-//              /connection/1/start
-//              /connection/1/stop
-
             }
         }
     }

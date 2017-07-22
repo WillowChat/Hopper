@@ -19,6 +19,10 @@ interface IHopperConnections {
     fun start(id: String)
     fun stop(id: String)
 
+    operator fun get(id: String): HopperConnection?
+    operator fun minusAssign(id: String)
+    operator fun contains(id: String): Boolean
+
 }
 
 data class HopperConnection(val id: String, val info: HopperConnectionInfo)
@@ -36,6 +40,25 @@ class HopperConnections(private val generator: IIdentifierGenerator) : IHopperCo
     private val warrens = ConcurrentHashMap<String, IWarrenClient>()
     private val states = ConcurrentHashMap<String, HopperConnectionState>()
     private val threads = ConcurrentHashMap<String, Thread>()
+
+    override fun get(id: String): HopperConnection? {
+        return infos[id]
+    }
+
+    override fun minusAssign(id: String) {
+        val info = infos[id] ?: return
+
+        stop(info.id)
+
+        infos.remove(id)
+        warrens.remove(id)
+        states.remove(id)
+        threads.remove(id)
+    }
+
+    override fun contains(id: String): Boolean {
+        return infos.containsKey(id)
+    }
 
     override fun all(): Set<HopperConnection> {
         return infos.values.toSet()
@@ -73,6 +96,7 @@ class HopperConnections(private val generator: IIdentifierGenerator) : IHopperCo
             server(server = info.host) {
                 useTLS = info.tls
                 port = info.port
+                channel("#botdev")
             }
 
             user(info.nick)
