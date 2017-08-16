@@ -41,6 +41,7 @@ class ConnectionStartRouteHandler(moshi: Moshi, private val connections: IHopper
         LOGGER.info("handling GET /connection/<id>/start: $request")
 
         // todo: sanity check id
+        val server = connections[context.id] ?: return jsonFailure(404, message = "couldn't find a server with id ${context.id}")
         connections.start(context.id)
 
         return RouteResult.success(value = EmptyBody)

@@ -41,6 +41,7 @@ class ConnectionStopRouteHandler(moshi: Moshi, private val connections: IHopperC
         LOGGER.info("handling GET /connection/<id>/stop: $request")
 
         // todo: sanity check id
+        val server = connections[context.id] ?: return jsonFailure(404, message = "couldn't find a server with id ${context.id}")
         connections.stop(context.id)
 
         return RouteResult.success(value = EmptyBody)

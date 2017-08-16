@@ -9,7 +9,9 @@ import chat.willow.hopper.db.ITokenDataSink
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.connection.*
 import chat.willow.hopper.routes.session.SessionsPostRouteHandler
-import chat.willow.hopper.websocket.HopperWebsocket
+import chat.willow.hopper.websocket.HopperWebSocket
+import chat.willow.hopper.websocket.IWebSocketUserTracker
+import chat.willow.hopper.websocket.WebSocketUserTracker
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
 import org.jetbrains.exposed.sql.name
@@ -45,7 +47,9 @@ object HopperRunner {
         val serverIdGenerator = IdentifierGenerator(bits = 130)
         val connections = HopperConnections(serverIdGenerator)
 
-        HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator, connections).start()
+        val webSocketUserTracker = WebSocketUserTracker()
+
+        HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator, connections, webSocketUserTracker).start()
     }
 
     fun doFirstTimeUsageIfNecessary() {
@@ -110,12 +114,13 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
                        private val loginMatcher: ILoginMatcher,
                        private val tokenDataSink: ITokenDataSink,
                        private val tokenGenerator: IIdentifierGenerator,
-                       private val connections: IHopperConnections) {
+                       private val connections: IHopperConnections,
+                       private val webSocketUserTracker: IWebSocketUserTracker) {
 
     fun start() {
         val http = Service.ignite()
 
-        http.webSocket("/websocket", HopperWebsocket(authenticator, authHeaderExtractor))
+        http.webSocket("/websocket", HopperWebSocket(authenticator, authHeaderExtractor, webSocketUserTracker))
 
         http.path("/session") {
             http.post("", SessionsPostRouteHandler(HopperRunner.moshi, loginMatcher, tokenDataSink, tokenGenerator))
@@ -126,7 +131,7 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
 
             http.path("/connection") {
                 http.get("", ConnectionsGetRouteHandler(HopperRunner.moshi, connections))
-                http.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections))
+                http.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
 
                 http.path("/:id") {
                     http.get("", ConnectionGetRouteHandler(HopperRunner.moshi, connections))

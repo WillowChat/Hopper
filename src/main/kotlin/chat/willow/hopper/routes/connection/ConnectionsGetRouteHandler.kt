@@ -26,7 +26,7 @@ class ConnectionsGetRouteHandler(moshi: Moshi, private val connections: IHopperC
     private val LOGGER = loggerFor<ConnectionsGetRouteHandler>()
 
     override fun handle(request: EmptyBody, context: AuthenticatedContext): RouteResult<ConnectionsGetResponseBody, ErrorResponseBody> {
-        LOGGER.info("handling GET /connections: $request")
+        LOGGER.info("handling GET /connection for all: $request")
 
         val servers = connections.all()
 

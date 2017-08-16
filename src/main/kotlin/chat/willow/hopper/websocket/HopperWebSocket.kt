@@ -10,9 +10,11 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage
 import org.eclipse.jetty.websocket.api.annotations.WebSocket
 
 @WebSocket
-class HopperWebsocket(private val authenticator: IUserTokenAuthenticator, private val authHeaderExtractor: IAuthHeaderExtractor) {
+class HopperWebSocket(private val authenticator: IUserTokenAuthenticator,
+                      private val authHeaderExtractor: IAuthHeaderExtractor,
+                      private val tracker: IWebSocketUserTracker) {
 
-    private val LOGGER = loggerFor<HopperWebsocket>()
+    private val LOGGER = loggerFor<HopperWebSocket>()
 
     @OnWebSocketConnect
     fun onConnect(session: Session) {
@@ -22,6 +24,7 @@ class HopperWebsocket(private val authenticator: IUserTokenAuthenticator, privat
             session.close(401, "unauthorized")
         } else {
             LOGGER.info("user $user opened a websocket connection")
+            tracker.add(user, session)
         }
     }
 
@@ -33,12 +36,20 @@ class HopperWebsocket(private val authenticator: IUserTokenAuthenticator, privat
             session.close(401, "unauthorized")
         } else {
             LOGGER.info("user $user sent a websocket message: $message")
+            tracker.onMessage(user, session, message)
         }
     }
 
     @OnWebSocketClose
     fun onClose(session: Session, statusCode: Int, reason: String) {
-
+        val user = authenticate(session)
+        if (user == null) {
+            LOGGER.info("unauthenticated user closed socket?: $session")
+            session.close(401, "unauthorized")
+        } else {
+            LOGGER.info("user $user closed a websocket connection")
+            tracker.remove(user, session)
+        }
     }
 
     private fun authenticate(session: Session): String? {
