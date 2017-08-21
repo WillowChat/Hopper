@@ -8,6 +8,7 @@ import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.ErrorResponseBody
 import chat.willow.hopper.websocket.IWebSocketUserTracker
 import chat.willow.hopper.websocket.WebSocketUserTracker
+import chat.willow.hopper.websocket.messages.NewConnection
 import chat.willow.warren.WarrenClient
 import com.google.common.net.HostSpecifier
 import com.google.common.net.InternetDomainName
@@ -45,8 +46,7 @@ class ConnectionsPostRouteHandler(moshi: Moshi, private val connections: IHopper
 
         val connection = connections.add(request.host, request.port, request.tls, request.nick) ?: return jsonFailure(500, "failed to create connection")
 
-        val websocketMessage = """{type:"new_connection",payload:{"id":"${connection.id}"}}"""
-        tracker.send(websocketMessage, user = context.user)
+        tracker.send(NewConnection.Payload(id = connection.id), user = context.user)
 
         return RouteResult.success(value = ConnectionsPostResponseBody(connection))
     }

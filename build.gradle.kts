@@ -75,8 +75,8 @@ dependencies {
 
     compile("chat.willow.warren:Warren:2.1.0.5")
 
-    compile("com.squareup.moshi:moshi:1.5.0-SNAPSHOT")
-    compile("com.squareup.moshi:moshi-kotlin:1.5.0-SNAPSHOT")
+    compile("com.squareup.moshi:moshi:1.5.0")
+    compile("com.squareup.moshi:moshi-kotlin:1.5.0")
 
     compile("org.xerial:sqlite-jdbc:3.16.1")
 
