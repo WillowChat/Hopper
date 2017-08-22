@@ -135,9 +135,9 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
 
                 http.path("/:id") {
                     http.get("", ConnectionGetRouteHandler(HopperRunner.moshi, connections))
-                    http.delete("", ConnectionDeleteRouteHandler(HopperRunner.moshi, connections))
-                    http.get("/start", ConnectionStartRouteHandler(HopperRunner.moshi, connections))
-                    http.get("/stop", ConnectionStopRouteHandler(HopperRunner.moshi, connections))
+                    http.delete("", ConnectionDeleteRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
+                    http.get("/start", ConnectionStartRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
+                    http.get("/stop", ConnectionStopRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
                 }
             }
         }

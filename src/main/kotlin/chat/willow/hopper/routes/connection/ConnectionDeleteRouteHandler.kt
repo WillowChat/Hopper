@@ -6,6 +6,9 @@ import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.EmptyBody
 import chat.willow.hopper.routes.shared.ErrorResponseBody
+import chat.willow.hopper.websocket.IWebSocketUserTracker
+import chat.willow.hopper.websocket.messages.ConnectionRemoved
+import chat.willow.hopper.websocket.messages.ConnectionStarted
 import com.squareup.moshi.Moshi
 import spark.Request
 
@@ -23,7 +26,7 @@ data class ConnectionDeleteContext(val authenticatedContext: AuthenticatedContex
 
 }
 
-class ConnectionDeleteRouteHandler(moshi: Moshi, private val connections: IHopperConnections) :
+class ConnectionDeleteRouteHandler(moshi: Moshi, private val connections: IHopperConnections, private val tracker: IWebSocketUserTracker) :
         JsonRouteHandler<EmptyBody, EmptyBody, ConnectionDeleteContext>(
                 EmptyBody,
                 EmptyBody,
@@ -40,6 +43,8 @@ class ConnectionDeleteRouteHandler(moshi: Moshi, private val connections: IHoppe
             return jsonFailure(404, message = "couldn't find a server with id ${context.id}")
         } else {
             connections -= context.id
+
+            tracker.send(ConnectionRemoved.Payload(id = context.id), user = context.authenticatedContext.user)
 
             return jsonSuccess(EmptyBody)
         }

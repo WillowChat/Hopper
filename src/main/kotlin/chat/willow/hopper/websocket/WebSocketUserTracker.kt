@@ -48,8 +48,18 @@ class WebSocketUserTracker: IWebSocketUserTracker {
         // do we even want to handle websocket requests at all?
     }
 
-    private val payloadToOwner = mapOf<Class<*>, WebSocketTypedMessage>(NewConnection.Payload::class.java to NewConnection)
-    private val payloadOwnerSerialisers = mapOf<Class<*>, WebSocketMessageSerialising<*>>(NewConnection.Payload::class.java to NewConnection.Serialiser)
+    private val payloadToOwner = mapOf<Class<*>, WebSocketTypedMessage>(
+            NewConnection.Payload::class.java to NewConnection,
+                ConnectionRemoved.Payload::class.java to ConnectionRemoved,
+                ConnectionStarted.Payload::class.java to ConnectionStarted,
+                ConnectionStopped.Payload::class.java to ConnectionStopped
+    )
+    private val payloadOwnerSerialisers = mapOf<Class<*>, WebSocketMessageSerialising<*>>(
+            NewConnection.Payload::class.java to NewConnection.Serialiser,
+            ConnectionRemoved.Payload::class.java to ConnectionRemoved.Serialiser,
+            ConnectionStopped.Payload::class.java to ConnectionStopped.Serialiser,
+            ConnectionStarted.Payload::class.java to ConnectionStarted.Serialiser
+    )
 
     override fun <T: Any> send(payload: T, user: String) {
         @Suppress("UNCHECKED_CAST")

@@ -7,6 +7,9 @@ import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.*
 import chat.willow.hopper.routes.shared.EmptyBody
 import chat.willow.hopper.routes.shared.ErrorResponseBody
+import chat.willow.hopper.websocket.IWebSocketUserTracker
+import chat.willow.hopper.websocket.messages.ConnectionStarted
+import chat.willow.hopper.websocket.messages.NewConnection
 import chat.willow.warren.WarrenClient
 import com.google.common.net.HostSpecifier
 import com.google.common.net.InternetDomainName
@@ -27,7 +30,7 @@ data class ConnectionStartContext(val authenticatedContext: AuthenticatedContext
 
 }
 
-class ConnectionStartRouteHandler(moshi: Moshi, private val connections: IHopperConnections) :
+class ConnectionStartRouteHandler(moshi: Moshi, private val connections: IHopperConnections, private val tracker: IWebSocketUserTracker) :
         JsonRouteHandler<EmptyBody, EmptyBody, ConnectionStartContext>(
                 EmptyBody,
                 EmptyBody,
@@ -43,6 +46,8 @@ class ConnectionStartRouteHandler(moshi: Moshi, private val connections: IHopper
         // todo: sanity check id
         val server = connections[context.id] ?: return jsonFailure(404, message = "couldn't find a server with id ${context.id}")
         connections.start(context.id)
+
+        tracker.send(ConnectionStarted.Payload(id = context.id), user = context.authenticatedContext.user)
 
         return RouteResult.success(value = EmptyBody)
     }
