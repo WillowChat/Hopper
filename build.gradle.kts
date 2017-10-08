@@ -145,6 +145,7 @@ tasks.withType<JacocoReport> {
         exclude("**/*State.*")
         exclude("**/*Configuration.*")
         exclude("**/*Runner.*")
+        exclude("**/generated/*")
     }
 
     reports.xml.isEnabled = true
