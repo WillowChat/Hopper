@@ -11,6 +11,7 @@ import org.jooq.util.jaxb.*
 import org.jooq.util.jaxb.Target
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.flywaydb.gradle.FlywayExtension
+import org.slf4j.LoggerFactory
 
 val hopperVersion by project
 val kotlinVersion by project
@@ -125,7 +126,11 @@ task(name = "generateJooq") {
         }
     }
 
-    GenerationTool.generate(configuration)
+    if (File("run/hopper.db").exists()) {
+        GenerationTool.generate(configuration)
+    } else {
+        LoggerFactory.getLogger("generateJooq").warn("run/hopper.db doesn't exist, so not running JOOQ generation")
+    }
 }
 
 configure<JacocoPluginExtension> {
