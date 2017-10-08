@@ -114,6 +114,11 @@ object Pbdfk2HmacSha512PasswordStorage: IPbdfk2HmacSha512PasswordStorage {
         return DecodedEntry(encodedHash, iterations, hashSize, salt)
     }
 
+    private fun extractFrom(parts: List<String>, index: Int): Int? {
+        val part: String = parts.getOrNull(index) ?: return null
+        return part.toIntOrNull()
+    }
+
     data class DecodedEntry(val derivedKeyHash: String, val iterations: Int, val hashSize: Int, val salt: String)
 
 }

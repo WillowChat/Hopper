@@ -22,7 +22,7 @@ data class ConnectionStartContext(val authenticatedContext: AuthenticatedContext
     companion object Builder: IContextBuilder<ConnectionStartContext> {
         override fun build(request: Request): ConnectionStartContext? {
             val authContext = AuthenticatedContext.Builder.build(request) ?: return null
-            val id = request.params("id") ?: return null
+            val id = request.params("connection_id") ?: return null
 
             return ConnectionStartContext(authContext, id)
         }

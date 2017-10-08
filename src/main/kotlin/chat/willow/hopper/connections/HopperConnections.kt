@@ -5,9 +5,6 @@ import chat.willow.hopper.auth.nextUniqueId
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.warren.IWarrenClient
 import chat.willow.warren.WarrenClient
-import chat.willow.warren.event.ChannelMessageEvent
-import chat.willow.warren.event.ConnectionLifecycleEvent
-import chat.willow.warren.event.PrivateMessageEvent
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
@@ -30,6 +27,10 @@ data class HopperConnection(val id: String, val info: HopperConnectionInfo)
 data class HopperConnectionInfo(val host: String, val port: Int, val tls: Boolean, val nick: String)
 
 enum class HopperConnectionState { STARTED, STOPPED }
+
+data class HopperBuffer(val id: String, val events: List<HopperBufferEvent<*>>) // todo: think about storage and retrieval by id, date/time
+
+data class HopperBufferEvent<out T>(val id: String, val type: String, val payload: T) // todo: metadata
 
 class HopperConnections(private val generator: IIdentifierGenerator) : IHopperConnections {
 

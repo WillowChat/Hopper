@@ -1,12 +1,14 @@
 package chat.willow.hopper.db
 
+import chat.willow.hopper.generated.tables.Logins
+import chat.willow.hopper.generated.tables.Sessions
+import chat.willow.hopper.generated.tables.records.LoginsRecord
 import chat.willow.hopper.logging.loggerFor
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManager
-import org.jetbrains.exposed.sql.transactions.TransactionManager
-import java.sql.Connection
+import org.flywaydb.core.Flyway
+import org.jooq.exception.DataAccessException
+import org.jooq.impl.DSL
+import org.sqlite.SQLiteDataSource
+import java.sql.DriverManager
 
 data class UserLogin(val userId: String, val user: String, val encodedAuthEntry: String)
 
@@ -25,80 +27,109 @@ interface ITokensDataSource {
 object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
     private val LOGGER = loggerFor<HopperDatabase>()
 
-    val database = Database.connect("jdbc:sqlite:hopper.db", "org.sqlite.JDBC", manager = { ThreadLocalTransactionManager(it, Connection.TRANSACTION_SERIALIZABLE) })
+    private val DATABASE_URL = "jdbc:sqlite:hopper.db"
+    val connection = DriverManager.getConnection(DATABASE_URL)
 
-    fun <T> transaction(statement: Transaction.() -> T): T? {
-        synchronized(HopperDatabase) {
-            try {
-                return org.jetbrains.exposed.sql.transactions.transaction(TransactionManager.manager.defaultIsolationLevel, 3, statement)
-            } catch (e: Throwable) {
-                return null
-            }
+    fun doMigrations() {
+        LOGGER.info("Running Flyway for database migrations...")
+
+        val flyway = Flyway()
+        val dataSource = SQLiteDataSource()
+        dataSource.url = DATABASE_URL
+
+        flyway.dataSource = dataSource
+        flyway.migrate()
+    }
+
+    fun computeNumberOfUsers(): Int? {
+        val context = DSL.using(connection)
+
+        return try {
+            context.fetchCount(Logins.LOGINS)
+        } catch (exception: DataAccessException) {
+            null
         }
     }
 
-    fun makeNewDatabase(): Boolean {
-        transaction {
-            SchemaUtils.create(Logins)
-            SchemaUtils.create(Sessions)
-        } ?: return false
-
-        LOGGER.info("made new database")
-        return true
-    }
-
     fun addNewUser(userId: String, newUsername: String, encodedPassword: String): Boolean {
-        val newUser = transaction {
-            Login.new {
-                userid = userId
-                username = newUsername
-                password = encodedPassword
-            }
-        } ?: return false
+        val context = DSL.using(connection)
 
-        LOGGER.info("made new user: ${newUser.username}")
+        val newLoginRecord = LoginsRecord()
+        newLoginRecord[Logins.LOGINS.USERID] = userId
+        newLoginRecord[Logins.LOGINS.USERNAME] = newUsername
+        newLoginRecord[Logins.LOGINS.PASSWORD] = encodedPassword
 
-        return true
+        return try {
+            context.insertInto(Logins.LOGINS).set(newLoginRecord).execute()
+
+            LOGGER.info("made new user: $newUsername")
+            true
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to make new user: $newUsername")
+            false
+        }
     }
 
     override fun getUserLogin(user: String): UserLogin? {
-        val dbUserLogin = transaction {
-            Login.find { Logins.username eq user }.firstOrNull() ?: return@transaction null
-        } ?: return null
+        val context = DSL.using(connection)
 
-        LOGGER.info("tried to find user $user: ${dbUserLogin.userid}")
+        val query = context.selectFrom(Logins.LOGINS).where(Logins.LOGINS.USERNAME.equal(user))
 
-        return UserLogin(userId = dbUserLogin.userid, user = dbUserLogin.username, encodedAuthEntry = dbUserLogin.password)
+        return try {
+            val result = query.fetchOne()
+
+            // todo: sanity check
+
+            LOGGER.info("tried to find user login: $user")
+
+            return UserLogin(userId = result.userid, user = result.username, encodedAuthEntry = result.password)
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to get user login: $user")
+
+            null
+        }
     }
 
     override fun getUserTokens(username: String): Set<String>? {
         val user = getUserLogin(username)
         if (user == null) {
-            LOGGER.info("failed to find tokens for $username")
+            LOGGER.info("failed to find user details for tokens: $username")
             return null
         }
 
-        val tokens = transaction {
-            val sessions = Session.find { Sessions.userid eq user.userId }
-            sessions.map { it.token }.toSet()
-        } ?: setOf()
+        val context = DSL.using(connection)
 
-        LOGGER.info("found ${tokens.size} tokens for $username")
+        val query = context.selectFrom(Sessions.SESSIONS).where(Sessions.SESSIONS.USERID.equal(user.userId))
 
-        return tokens
+        return try {
+            val results = query.fetch()
+
+            results.mapNotNull { it.token }.toSet()
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to query tokens: $username")
+
+            null
+        }
     }
 
     override fun addUserToken(userId: String, newToken: String): Boolean {
-        transaction {
-            Session.new {
-                userid = userId
-                token = newToken
-            }
-        } ?: return false
+        val context = DSL.using(connection)
 
-        LOGGER.info("added session token for $userId")
+        val newUserTokenRecord = Sessions.SESSIONS.newRecord()
+        newUserTokenRecord[Sessions.SESSIONS.USERID] = userId
+        newUserTokenRecord[Sessions.SESSIONS.TOKEN] = newToken
 
-        return true
+        return try {
+            context.insertInto(Sessions.SESSIONS).set(newUserTokenRecord).execute()
+
+            LOGGER.info("added session token: $userId")
+
+            true
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to add session token: $userId")
+
+            false
+        }
     }
 
 }

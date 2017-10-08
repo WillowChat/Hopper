@@ -4,7 +4,6 @@ import chat.willow.hopper.auth.*
 import chat.willow.hopper.connections.HopperConnections
 import chat.willow.hopper.connections.IHopperConnections
 import chat.willow.hopper.db.HopperDatabase
-import chat.willow.hopper.db.HopperDatabase.database
 import chat.willow.hopper.db.ITokenDataSink
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.connection.*
@@ -14,7 +13,7 @@ import chat.willow.hopper.websocket.IWebSocketUserTracker
 import chat.willow.hopper.websocket.WebSocketUserTracker
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
-import org.jetbrains.exposed.sql.name
+import org.flywaydb.core.Flyway
 import spark.Service
 import java.io.File
 import java.util.*
@@ -36,6 +35,7 @@ object HopperRunner {
         LOGGER.info("Support the development of this bouncer at https://crrt.io/patreon 🐰🎉")
         LOGGER.info("Starting up...")
 
+        HopperDatabase.doMigrations()
         doFirstTimeUsageIfNecessary()
 
         val authenticator = UserTokenAuthenticator(HopperDatabase)
@@ -53,13 +53,10 @@ object HopperRunner {
     }
 
     fun doFirstTimeUsageIfNecessary() {
-        // Check for presence of database
-        // if it exists, do nothing
-        // if it doesn't, prompt for user and password, then initialise database with it
+        val numberOfUsers = HopperDatabase.computeNumberOfUsers() ?: throw RuntimeException("Failed to get number of users from the database - migrations failed?")
 
-        val databaseExists = File("./hopper.db").let { it.isFile && it.exists() }
-        if (databaseExists) {
-            LOGGER.info("not doing first time user setup as hopper.db already exists")
+        if (numberOfUsers > 0) {
+            LOGGER.info("Not doing first-time setup as at least one user already exists")
             return
         }
 
@@ -87,9 +84,7 @@ object HopperRunner {
 
         val encodedPassword = Pbdfk2HmacSha512PasswordStorage.encode(salt, derivedKey) ?: throw RuntimeException("Couldn't encode derived key")
 
-        LOGGER.info("database name: ${database.name}")
-
-        HopperDatabase.makeNewDatabase()
+        LOGGER.info("Adding new user $userId")
         HopperDatabase.addNewUser(userId, newUsername, encodedPassword)
     }
 
@@ -133,7 +128,7 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
                 http.get("", ConnectionsGetRouteHandler(HopperRunner.moshi, connections))
                 http.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
 
-                http.path("/:id") {
+                http.path("/:connection_id") {
                     http.get("", ConnectionGetRouteHandler(HopperRunner.moshi, connections))
                     http.delete("", ConnectionDeleteRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
                     http.get("/start", ConnectionStartRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))

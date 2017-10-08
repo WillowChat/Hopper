@@ -26,7 +26,7 @@ class SessionsPostRouteHandler(moshi: Moshi,
     private val LOGGER = loggerFor<SessionsPostRouteHandler>()
 
     override fun handle(request: SessionsPostRequestBody, context: EmptyContext): RouteResult<SessionsPostResponseBody, ErrorResponseBody> {
-        if (request.user.isNullOrEmpty() || request.password.isNullOrEmpty()) {
+        if (request.user.isEmpty() || request.password.isEmpty()) {
             return Responses.badlyFormatted
         }
 

@@ -15,7 +15,7 @@ data class ConnectionGetContext(val authenticatedContext: AuthenticatedContext, 
     companion object Builder: IContextBuilder<ConnectionGetContext> {
         override fun build(request: Request): ConnectionGetContext? {
             val authContext = AuthenticatedContext.Builder.build(request) ?: return null
-            val id = request.params("id") ?: return null
+            val id = request.params("connection_id") ?: return null
 
             return ConnectionGetContext(authContext, id)
         }

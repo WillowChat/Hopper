@@ -22,7 +22,7 @@ data class ConnectionStopContext(val authenticatedContext: AuthenticatedContext,
     companion object Builder: IContextBuilder<ConnectionStopContext> {
         override fun build(request: Request): ConnectionStopContext? {
             val authContext = AuthenticatedContext.Builder.build(request) ?: return null
-            val id = request.params("id") ?: return null
+            val id = request.params("connection_id") ?: return null
 
             return ConnectionStopContext(authContext, id)
         }
