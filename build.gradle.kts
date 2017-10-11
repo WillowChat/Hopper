@@ -73,7 +73,6 @@ repositories {
     gradleScriptKotlin()
     maven { setUrl("https://maven.ci.carrot.codes/") }
     maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots") }
-    maven { setUrl("https://dl.bintray.com/kotlin/exposed") }
 }
 
 dependencies {
@@ -86,7 +85,7 @@ dependencies {
 
     compile("com.sparkjava:spark-core:2.6.0")
 
-    compile("chat.willow.warren:Warren:2.1.0.5")
+    compile("chat.willow.warren:Warren:2.1.1.7")
 
     compile("com.squareup.moshi:moshi:1.5.0")
     compile("com.squareup.moshi:moshi-kotlin:1.5.0")

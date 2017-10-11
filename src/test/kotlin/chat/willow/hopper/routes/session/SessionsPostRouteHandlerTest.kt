@@ -50,7 +50,7 @@ class SessionsPostRouteHandlerTest {
 
         val response = sut.handle(SessionsPostRequestBody(user = "someone", password = "something"), EmptyContext)
 
-        assertEquals(jsonSuccess(SessionsPostResponseBody(token = "token")), response)
+        assertEquals(jsonSuccess(SessionsPostResponseBody(user = "someone", token = "token")), response)
     }
 
     @Test fun `incorrect user results in 401`() {

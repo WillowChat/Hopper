@@ -71,6 +71,10 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
     }
 
     override fun getUserLogin(user: String): UserLogin? {
+        if (user.isBlank()) {
+            return null
+        }
+
         val context = DSL.using(connection)
 
         val query = context.selectFrom(Logins.LOGINS).where(Logins.LOGINS.USERNAME.equal(user))

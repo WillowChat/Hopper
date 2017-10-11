@@ -16,7 +16,11 @@ inline fun <reified Type> Moshi.stringParser(): IStringParser<Type> {
                 return null
             }
 
-            return adapter.fromJson(string)
+            return try {
+                adapter.fromJson(string)
+            } catch (exception: Exception) {
+                return null
+            }
         }
 
     }

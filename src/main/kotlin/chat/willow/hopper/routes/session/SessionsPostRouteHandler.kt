@@ -10,7 +10,7 @@ import com.squareup.moshi.Moshi
 
 data class SessionsPostRequestBody(val user: String, val password: String)
 
-data class SessionsPostResponseBody(val token: String)
+data class SessionsPostResponseBody(val user: String, val token: String)
 
 class SessionsPostRouteHandler(moshi: Moshi,
                                private val loginMatcher: ILoginMatcher,
@@ -36,7 +36,7 @@ class SessionsPostRouteHandler(moshi: Moshi,
 
         LOGGER.info("Stored new auth token for user ${request.user}")
 
-        return RouteResult.success(value = SessionsPostResponseBody(token = newToken))
+        return RouteResult.success(value = SessionsPostResponseBody(user = request.user, token = newToken))
     }
 
     private fun storeNewUserToken(userId: String): String? {
