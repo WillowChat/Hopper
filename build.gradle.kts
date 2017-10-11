@@ -70,7 +70,6 @@ application {
 
 repositories {
     jcenter()
-    gradleScriptKotlin()
     maven { setUrl("https://maven.ci.carrot.codes/") }
     maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots") }
 }
