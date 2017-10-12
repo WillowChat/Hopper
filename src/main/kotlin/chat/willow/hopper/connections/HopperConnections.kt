@@ -6,14 +6,14 @@ import chat.willow.hopper.logging.loggerFor
 import chat.willow.warren.IWarrenClient
 import chat.willow.warren.WarrenClient
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 
 interface IHopperConnections {
 
-    fun add(host: String, port: Int, tls: Boolean, nick: String): HopperConnection?
+    fun create(host: String, port: Int, tls: Boolean, nick: String): HopperConnection?
+    fun track(connection: HopperConnection)
     fun remove(id: String)
     fun all(): Set<HopperConnection>
     fun start(id: String)
@@ -72,27 +72,29 @@ class HopperConnections(private val generator: IIdentifierGenerator) : IHopperCo
         return connections.values.toSet()
     }
 
-    override fun add(host: String, port: Int, tls: Boolean, nick: String): HopperConnection? {
-        // todo: check for duplicates?
-
+    override fun create(host: String, port: Int, tls: Boolean, nick: String): HopperConnection? {
         val id = nextUniqueId(generator, connections)
+
+        val info = HopperConnectionInfo(host, port, tls, nick)
+
+        return HopperConnection(id, info)
+    }
+
+    override fun track(connection: HopperConnection) {
         val lock = ReentrantLock()
 
-        connectionLocks[id] = lock
+        connectionLocks[connection.id] = lock
 
-        return lock.withLock {
-            val info = HopperConnectionInfo(host, port, tls, nick)
-
-            val connection = HopperConnection(id, info)
-            connections += id to connection
-            val client = constructWarrenClient(info)
+        lock.withLock {
+            connections += connection.id to connection
+            val client = constructWarrenClient(connection.info)
 
             client.events.onAny {
-                LOGGER.info("event for $id: $it")
+                LOGGER.info("event for ${connection.id}: $it")
             }
 
-            warrens += id to client
-            states += id to HopperConnectionState.STOPPED
+            warrens += connection.id to client
+            states += connection.id to HopperConnectionState.STOPPED
 
             connection
         }

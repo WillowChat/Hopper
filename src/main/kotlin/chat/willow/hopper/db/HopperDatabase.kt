@@ -1,5 +1,8 @@
 package chat.willow.hopper.db
 
+import chat.willow.hopper.connections.HopperConnection
+import chat.willow.hopper.connections.HopperConnectionInfo
+import chat.willow.hopper.generated.tables.Connections
 import chat.willow.hopper.generated.tables.Logins
 import chat.willow.hopper.generated.tables.Sessions
 import chat.willow.hopper.generated.tables.records.LoginsRecord
@@ -24,7 +27,19 @@ interface ITokensDataSource {
     fun getUserTokens(username: String): Set<String>?
 }
 
-object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
+interface IConnectionsDataSource {
+    fun getUserConnections(username: String): Set<HopperConnection>?
+}
+
+interface IConnectionsDataSink {
+    fun addConnection(username: String, hopperConnection: HopperConnection): Boolean
+}
+
+interface IUsersDataSource {
+    fun getUsers(): Set<UserLogin>
+}
+
+object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource, IConnectionsDataSource, IConnectionsDataSink, IUsersDataSource {
     private val LOGGER = loggerFor<HopperDatabase>()
 
     private val DATABASE_URL = "jdbc:sqlite:hopper.db"
@@ -136,4 +151,63 @@ object HopperDatabase : ILoginDataSource, ITokenDataSink, ITokensDataSource {
         }
     }
 
+    override fun getUserConnections(username: String): Set<HopperConnection>? {
+        val context = DSL.using(connection)
+
+        val user = getUserLogin(username) ?: return null
+
+        val query = context.selectFrom(Connections.CONNECTIONS).where(Connections.CONNECTIONS.USERID.equal(user.userId))
+
+        return try {
+            val results = query.fetch()
+
+            results.mapNotNull { HopperConnection(id = it.connectionid, info = HopperConnectionInfo(host = it.host, port = it.port, tls = it.tls, nick = it.nick)) }.toSet()
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to get user connections: $username")
+
+            null
+        }
+    }
+
+    override fun addConnection(username: String, hopperConnection: HopperConnection): Boolean {
+        val context = DSL.using(connection)
+
+        val user = getUserLogin(username) ?: return false
+
+        val newConnectionRecord = Connections.CONNECTIONS.newRecord()
+        newConnectionRecord.connectionid = hopperConnection.id
+        newConnectionRecord.userid = user.userId
+        newConnectionRecord.host = hopperConnection.info.host
+        newConnectionRecord.port = hopperConnection.info.port
+        newConnectionRecord.tls = hopperConnection.info.tls
+        newConnectionRecord.nick = hopperConnection.info.nick
+
+        return try {
+            context.insertInto(Connections.CONNECTIONS).set(newConnectionRecord).execute()
+
+            LOGGER.info("added connection for user: $username $hopperConnection")
+
+            true
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to add connection for user: $username $hopperConnection")
+
+            false
+        }
+    }
+
+    override fun getUsers(): Set<UserLogin> {
+        val context = DSL.using(connection)
+
+        val query = context.selectFrom(Logins.LOGINS)
+
+        return try {
+            val result = query.fetch()
+
+            return result.mapNotNull { UserLogin(userId = it.userid, user = it.username, encodedAuthEntry = it.password) }.toSet()
+        } catch (exception: DataAccessException) {
+            LOGGER.info("failed to get user logins")
+
+            setOf()
+        }
+    }
 }

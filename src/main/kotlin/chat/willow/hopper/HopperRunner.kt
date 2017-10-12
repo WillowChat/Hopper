@@ -13,9 +13,7 @@ import chat.willow.hopper.websocket.IWebSocketUserTracker
 import chat.willow.hopper.websocket.WebSocketUserTracker
 import chat.willow.warren.IWarrenClient
 import com.squareup.moshi.Moshi
-import org.flywaydb.core.Flyway
 import spark.Service
-import java.io.File
 import java.util.*
 
 object HopperRunner {
@@ -48,6 +46,27 @@ object HopperRunner {
         val connections = HopperConnections(serverIdGenerator)
 
         val webSocketUserTracker = WebSocketUserTracker()
+
+        val allUsers = HopperDatabase.getUsers()
+
+        for (user in allUsers) {
+            LOGGER.info("Loading connections for ${user.user}")
+
+            val userConnections = HopperDatabase.getUserConnections(user.user)
+            if (userConnections == null) {
+                LOGGER.error(" Failed to get connections from database, skipping user")
+                continue
+            }
+
+            LOGGER.info(" Found ${userConnections.size} to load")
+
+            userConnections.forEach {
+                LOGGER.info(" Tracking: $it")
+                connections.track(it)
+            }
+
+            LOGGER.info(" Loaded!")
+        }
 
         HopperWebService(authHeaderExtractor, authenticator, loginMatcher, HopperDatabase, tokenGenerator, connections, webSocketUserTracker).start()
     }
@@ -126,7 +145,7 @@ class HopperWebService(private val authHeaderExtractor: IAuthHeaderExtractor,
 
             http.path("/connection") {
                 http.get("", ConnectionsGetRouteHandler(HopperRunner.moshi, connections))
-                http.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker))
+                http.post("", ConnectionsPostRouteHandler(HopperRunner.moshi, connections, webSocketUserTracker, HopperDatabase))
 
                 http.path("/:connection_id") {
                     http.get("", ConnectionGetRouteHandler(HopperRunner.moshi, connections))

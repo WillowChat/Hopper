@@ -4,9 +4,11 @@
 package chat.willow.hopper.generated;
 
 
+import chat.willow.hopper.generated.tables.Connections;
 import chat.willow.hopper.generated.tables.Logins;
 import chat.willow.hopper.generated.tables.SchemaVersion;
 import chat.willow.hopper.generated.tables.Sessions;
+import chat.willow.hopper.generated.tables.SqliteSequence;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,12 +34,17 @@ import org.jooq.impl.SchemaImpl;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class DefaultSchema extends SchemaImpl {
 
-    private static final long serialVersionUID = -981144941;
+    private static final long serialVersionUID = -1379952195;
 
     /**
      * The reference instance of <code></code>
      */
     public static final DefaultSchema DEFAULT_SCHEMA = new DefaultSchema();
+
+    /**
+     * The table <code>Connections</code>.
+     */
+    public final Connections CONNECTIONS = chat.willow.hopper.generated.tables.Connections.CONNECTIONS;
 
     /**
      * The table <code>Logins</code>.
@@ -53,6 +60,11 @@ public class DefaultSchema extends SchemaImpl {
      * The table <code>schema_version</code>.
      */
     public final SchemaVersion SCHEMA_VERSION = chat.willow.hopper.generated.tables.SchemaVersion.SCHEMA_VERSION;
+
+    /**
+     * The table <code>sqlite_sequence</code>.
+     */
+    public final SqliteSequence SQLITE_SEQUENCE = chat.willow.hopper.generated.tables.SqliteSequence.SQLITE_SEQUENCE;
 
     /**
      * No further instances allowed
@@ -79,8 +91,10 @@ public class DefaultSchema extends SchemaImpl {
 
     private final List<Table<?>> getTables0() {
         return Arrays.<Table<?>>asList(
+            Connections.CONNECTIONS,
             Logins.LOGINS,
             Sessions.SESSIONS,
-            SchemaVersion.SCHEMA_VERSION);
+            SchemaVersion.SCHEMA_VERSION,
+            SqliteSequence.SQLITE_SEQUENCE);
     }
 }

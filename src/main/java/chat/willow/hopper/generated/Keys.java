@@ -4,15 +4,18 @@
 package chat.willow.hopper.generated;
 
 
+import chat.willow.hopper.generated.tables.Connections;
 import chat.willow.hopper.generated.tables.Logins;
 import chat.willow.hopper.generated.tables.SchemaVersion;
 import chat.willow.hopper.generated.tables.Sessions;
+import chat.willow.hopper.generated.tables.records.ConnectionsRecord;
 import chat.willow.hopper.generated.tables.records.LoginsRecord;
 import chat.willow.hopper.generated.tables.records.SchemaVersionRecord;
 import chat.willow.hopper.generated.tables.records.SessionsRecord;
 
 import javax.annotation.Generated;
 
+import org.jooq.ForeignKey;
 import org.jooq.UniqueKey;
 import org.jooq.impl.AbstractKeys;
 
@@ -40,6 +43,7 @@ public class Keys {
     // UNIQUE and PRIMARY KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final UniqueKey<ConnectionsRecord> PK_CONNECTIONS = UniqueKeys0.PK_CONNECTIONS;
     public static final UniqueKey<LoginsRecord> PK_LOGINS = UniqueKeys0.PK_LOGINS;
     public static final UniqueKey<SessionsRecord> PK_SESSIONS = UniqueKeys0.PK_SESSIONS;
     public static final UniqueKey<SchemaVersionRecord> PK_SCHEMA_VERSION = UniqueKeys0.PK_SCHEMA_VERSION;
@@ -48,14 +52,20 @@ public class Keys {
     // FOREIGN KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final ForeignKey<ConnectionsRecord, LoginsRecord> FK_CONNECTIONS_LOGINS_1 = ForeignKeys0.FK_CONNECTIONS_LOGINS_1;
 
     // -------------------------------------------------------------------------
     // [#1459] distribute members to avoid static initialisers > 64kb
     // -------------------------------------------------------------------------
 
     private static class UniqueKeys0 extends AbstractKeys {
+        public static final UniqueKey<ConnectionsRecord> PK_CONNECTIONS = createUniqueKey(Connections.CONNECTIONS, "pk_Connections", Connections.CONNECTIONS.ID);
         public static final UniqueKey<LoginsRecord> PK_LOGINS = createUniqueKey(Logins.LOGINS, "pk_Logins", Logins.LOGINS.ID);
         public static final UniqueKey<SessionsRecord> PK_SESSIONS = createUniqueKey(Sessions.SESSIONS, "pk_Sessions", Sessions.SESSIONS.ID);
         public static final UniqueKey<SchemaVersionRecord> PK_SCHEMA_VERSION = createUniqueKey(SchemaVersion.SCHEMA_VERSION, "pk_schema_version", SchemaVersion.SCHEMA_VERSION.INSTALLED_RANK);
+    }
+
+    private static class ForeignKeys0 extends AbstractKeys {
+        public static final ForeignKey<ConnectionsRecord, LoginsRecord> FK_CONNECTIONS_LOGINS_1 = createForeignKey(chat.willow.hopper.generated.Keys.PK_LOGINS, Connections.CONNECTIONS, "fk_Connections_Logins_1", Connections.CONNECTIONS.USERID);
     }
 }

@@ -4,9 +4,11 @@
 package chat.willow.hopper.generated;
 
 
+import chat.willow.hopper.generated.tables.Connections;
 import chat.willow.hopper.generated.tables.Logins;
 import chat.willow.hopper.generated.tables.SchemaVersion;
 import chat.willow.hopper.generated.tables.Sessions;
+import chat.willow.hopper.generated.tables.SqliteSequence;
 
 import javax.annotation.Generated;
 
@@ -25,6 +27,11 @@ import javax.annotation.Generated;
 public class Tables {
 
     /**
+     * The table <code>Connections</code>.
+     */
+    public static final Connections CONNECTIONS = chat.willow.hopper.generated.tables.Connections.CONNECTIONS;
+
+    /**
      * The table <code>Logins</code>.
      */
     public static final Logins LOGINS = chat.willow.hopper.generated.tables.Logins.LOGINS;
@@ -38,4 +45,9 @@ public class Tables {
      * The table <code>schema_version</code>.
      */
     public static final SchemaVersion SCHEMA_VERSION = chat.willow.hopper.generated.tables.SchemaVersion.SCHEMA_VERSION;
+
+    /**
+     * The table <code>sqlite_sequence</code>.
+     */
+    public static final SqliteSequence SQLITE_SEQUENCE = chat.willow.hopper.generated.tables.SqliteSequence.SQLITE_SEQUENCE;
 }

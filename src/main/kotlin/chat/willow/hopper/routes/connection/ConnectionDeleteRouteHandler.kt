@@ -1,6 +1,5 @@
 package chat.willow.hopper.routes.connection
 
-import chat.willow.hopper.connections.HopperConnection
 import chat.willow.hopper.connections.IHopperConnections
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.*
@@ -8,7 +7,6 @@ import chat.willow.hopper.routes.shared.EmptyBody
 import chat.willow.hopper.routes.shared.ErrorResponseBody
 import chat.willow.hopper.websocket.IWebSocketUserTracker
 import chat.willow.hopper.websocket.messages.ConnectionRemoved
-import chat.willow.hopper.websocket.messages.ConnectionStarted
 import com.squareup.moshi.Moshi
 import spark.Request
 

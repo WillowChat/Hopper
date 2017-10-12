@@ -2,7 +2,6 @@ package chat.willow.hopper.websocket
 
 import chat.willow.hopper.logging.loggerFor
 import chat.willow.hopper.routes.IStringSerialiser
-import chat.willow.hopper.routes.stringSerialiser
 import chat.willow.hopper.websocket.messages.*
 import org.eclipse.jetty.websocket.api.Session
 import java.util.concurrent.ConcurrentHashMap
